@@ -3,6 +3,7 @@ import time
 import logging
 import multiprocessing as mp
 import pandas as pd
+from tqdm import tqdm
 import nlpaug.augmenter.word as naw
 from config import (AUG_P_DELETE,AUG_P_INSERT,AUG_P_SUBSTITUTE,AUG_P_SWAP,
                     AUG_MAX_RATIO,AUG_MINORITY_RATIO,AUG_TARGET_RATIO)
@@ -89,12 +90,12 @@ def _augment_rows_worker(args):
     augment their text_column. Each worker loads its own augmenters
     (nlpaug models aren't shared across processes).
     """
-    cls_df, text_column, aravec_bin_path, n_rows, seed = args
+    cls_df, text_column, aravec_bin_path, n_rows, seed, label = args
     augmenters = load_augmenters(aravec_bin_path)
     rng = random.Random(seed)
 
     aug_rows = []
-    for _ in range(n_rows):
+    for _ in tqdm(range(n_rows), desc=label, position=0, leave=True):
         row = cls_df.iloc[rng.randrange(len(cls_df))].copy()
         row[text_column] = augment_text(row[text_column], augmenters)
         aug_rows.append(row)
@@ -158,7 +159,8 @@ def augment_dataframe(df_train, text_column, target_column, aravec_bin_path,
         n_chunks = max(1, n_jobs)
         for i, chunk_size in enumerate(_split_count(needed, n_chunks)):
             if chunk_size > 0:
-                tasks.append((cls_df, text_column, aravec_bin_path, chunk_size, random_state + i))
+                label = f"class {cls} chunk {i + 1}/{n_chunks}"
+                tasks.append((cls_df, text_column, aravec_bin_path, chunk_size, random_state + i, label))
 
     start = time.time()
     if n_jobs > 1 and tasks:
