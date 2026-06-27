@@ -19,7 +19,7 @@ AUG_P_SWAP = 0.2
 AUG_MINORITY_RATIO = 0.6
 AUG_TARGET_RATIO = 0.8
 AUG_MAX_RATIO = 3
-AUG_N_JOBS = int(os.environ.get('AUG_N_JOBS', os.cpu_count() or 2)) # auto-detects runtime's CPU count
+AUG_N_JOBS = 0 #int(os.environ.get('AUG_N_JOBS', min(os.cpu_count() or 2, 4))) # capped: each worker loads its own copy of the AraVec model into RAM
 
 
 # TF-IDF HyperParameters
