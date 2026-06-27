@@ -1,0 +1,41 @@
+AraVec Model Setup Instructions
+================================
+
+This downloads the AraVec Twitter CBOW 100-dim word2vec model and converts
+it to the .bin format required by augmentation.py (load_augmenters /
+aravec_bin_path argument).
+
+Step 1: Install dependencies
+-----------------------------
+!pip install nlpaug gensim --quiet
+
+Step 2: Download AraVec (Twitter CBOW 100-dim — smallest & fastest)
+---------------------------------------------------------------------
+!wget -q --show-progress \
+    "https://archive.org/download/full_grams_cbow_300_twitter/full_uni_cbow_100_twitter.zip" \
+    -O aravec.zip
+
+!unzip -q aravec.zip -d aravec_model
+!ls aravec_model/  # check extracted files
+
+Step 3: Load model with gensim
+--------------------------------
+import gensim
+
+w2v_model = gensim.models.Word2Vec.load(
+    'aravec_model/full_uni_cbow_100_twitter.mdl'
+)
+print(f"Model loaded ✓  |  Vocab size: {len(w2v_model.wv)}")
+
+# Quick test
+print(w2v_model.wv.most_similar('رائع', topn=5))
+
+Step 4: Save as word2vec .bin format that nlpaug can read
+-------------------------------------------------------------
+w2v_model.wv.save_word2vec_format('aravec_model/aravec.bin', binary=True)
+print("Saved as .bin ✓")
+
+Result
+------
+Use 'aravec_model/aravec.bin' as the aravec_bin_path argument passed to
+augment_dataframe() / load_augmenters() in src/augmentation.py.
