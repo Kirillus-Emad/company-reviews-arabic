@@ -1,3 +1,5 @@
+import os
+
 # Data Paths
 ORIGINAL_DATA_PATH='../data/CompanyReviews.csv'
 EDA_DATA_PATH='../data/df_eda.csv'
@@ -17,7 +19,7 @@ AUG_P_SWAP = 0.2
 AUG_MINORITY_RATIO = 0.6
 AUG_TARGET_RATIO = 0.8
 AUG_MAX_RATIO = 3
-AUG_N_JOBS = 2 # correspond to colab
+AUG_N_JOBS = int(os.environ.get('AUG_N_JOBS', os.cpu_count() or 2)) # auto-detects runtime's CPU count
 
 
 # TF-IDF HyperParameters
