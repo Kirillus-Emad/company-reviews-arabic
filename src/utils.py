@@ -5,7 +5,7 @@ from string import punctuation
 def get_all_en_ara_punct():
     ARABIC_PUNCT = '؟،؛«»۔٪٭'
     ALL_PUNCT = punctuation + ARABIC_PUNCT
-    return ALL_PUNCT
+    return set(ALL_PUNCT)
 
 
 def normalize_arabic(text):
@@ -30,9 +30,8 @@ def normalize_arabic(text):
     # remove tatweel
     text = re.sub(r'ـ', '', text)
 
-    # normalize repeated letters
-
-    text = re.sub(r'(.)\1+', r'\1', text)
+    # normalize repeated letters (Arabic letters only, so English words like "good" aren't mangled into "god")
+    text = re.sub(r'([ء-ي])\1+', r'\1', text)
 
 
     return text
