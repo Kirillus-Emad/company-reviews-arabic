@@ -1,7 +1,10 @@
 import re
 import contractions
+import emoji
 import utils as ut
 from camel_tools.tokenizers.word import simple_word_tokenize
+from camel_tools.tokenizers.morphological import MorphologicalTokenizer
+from camel_tools.disambig.mle import MLEDisambiguator
 from nltk import pos_tag
 from nltk.corpus import wordnet
 from nltk.stem import WordNetLemmatizer
@@ -12,9 +15,17 @@ all_puct=ut.get_all_en_ara_punct()
 spell_checker_en=SpellChecker()
 spell_checker_ar=SpellChecker(language='ar', distance=1)
 lemmatizer=WordNetLemmatizer()
+mle_disambiguator=MLEDisambiguator.pretrained('calima-msa-r13')
+morphological_tokenizer=MorphologicalTokenizer(disambiguator=mle_disambiguator, scheme='atbtok', split=True)
 
 EN_WORD_RE = re.compile(r"[a-z]+")
 AR_WORD_RE = re.compile(r"[؀-ۿ]+")
+
+
+def _segment_arabic_word(word):
+    """Split an Arabic word into its prefix/stem/suffix clitics, e.g. 'بالمدرسة' -> ['ب', 'المدرسة']."""
+    segments = morphological_tokenizer.tokenize([word])
+    return [s.replace('+', '') for s in segments if s.replace('+', '')]
 
 def _wordnet_pos(treebank_tag):
     if treebank_tag.startswith('J'):
@@ -35,6 +46,9 @@ def preprocess_arabic(text):
 
     # remove mentions & hashtags
     text = re.sub(r'@\w+|#\w+', '', text)
+
+    # remove any emojis left over after decoding
+    text = emoji.replace_emoji(text, replace='')
 
     # expand English contractions (must run before tokenization)
     text = contractions.fix(text)
@@ -67,6 +81,15 @@ def preprocess_arabic(text):
         for i, (word, tag) in zip(en_positions, en_tags):
             tokens[i] = lemmatizer.lemmatize(word, _wordnet_pos(tag))
 
+    # Segment Arabic words into prefix/stem/suffix clitics (e.g. 'بالمدرسة' -> 'ب', 'المدرسة')
+    segmented_tokens = []
+    for t in tokens:
+        if AR_WORD_RE.fullmatch(t):
+            segmented_tokens.extend(_segment_arabic_word(t))
+        else:
+            segmented_tokens.append(t)
+    tokens = segmented_tokens
+
     # Step 1 — remove punctuation
     tokens = [t for t in tokens if t not in all_puct]
 
@@ -82,5 +105,6 @@ def preprocess_arabic(text):
 
 
 if __name__ == "__main__":
-    print('اليفلم جاااامد مووت he likes playing remembr')
+    print("---Test cases---")
+    print('اليفلم جاااامد مووت he likes playing remembr بالمدرسة وعمره بالمره')
     print(preprocess_arabic('اليفلم جاااامد مووت he likes playing remembr'))
