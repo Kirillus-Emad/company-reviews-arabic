@@ -107,4 +107,4 @@ def preprocess_arabic(text):
 if __name__ == "__main__":
     print("---Test cases---")
     print('اليفلم جاااامد مووت he likes playing remembr بالمدرسة وعمره بالمره')
-    print(preprocess_arabic('اليفلم جاااامد مووت he likes playing remembr'))
+    print(preprocess_arabic('اليفلم جاااامد مووت he likes playing remembr بالمدرسة وعمره بالمره'))
