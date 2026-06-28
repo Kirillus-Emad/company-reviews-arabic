@@ -79,3 +79,8 @@ def preprocess_arabic(text):
     text = re.sub(r'\s+', ' ', text).strip()
 
     return text
+
+
+if __name__ == "__main__":
+    print('اليفلم جاااامد مووت he likes playing remembr')
+    print(preprocess_arabic('اليفلم جاااامد مووت he likes playing remembr'))
