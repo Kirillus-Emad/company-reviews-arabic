@@ -29,7 +29,46 @@ AUG_N_JOBS = int(os.environ.get('AUG_N_JOBS', max(os.cpu_count(), 4)))
 TRAD_PREP_N_JOBS = int(os.environ.get('TRAD_PREP_N_JOBS', max(os.cpu_count(), 1)))
 
 
-# TF-IDF HyperParameters
+# Data columns
+TEXT_COLUMN = 'decoded_emojis'
+TARGET_COLUMN = 'rating'
 
-TF_IDF_MAX_FEATURES=5000
-TF_IDF_NGRAM_RANGE=(1,2)
+# TF-IDF hyperparameters
+TF_IDF_MAX_FEATURES = 10000
+TF_IDF_NGRAM_RANGE = (1, 2)
+TF_IDF_SUBLINEAR_TF = True     # log(1+tf) — recommended for text classification
+
+# BOW Features
+BOW_FEATURES_DIR = '../BOW features'
+BOW_TRAIN_PATH = '../BOW features/tfidf_train.npz'
+BOW_TEST_PATH = '../BOW features/tfidf_test.npz'
+BOW_VECTORIZER_PATH = '../BOW features/tfidf_vectorizer.joblib'
+
+# ML Models output
+ML_MODELS_DIR = '../ML models'
+ML_RESULTS_PATH = '../ML models/results.json'
+ML_N_JOBS = int(os.environ.get('ML_N_JOBS', max(os.cpu_count() - 1, 1)))
+
+# Label encoding: original -1/0/1 → encoded 0/1/2
+# 0 = negative (-1), 1 = neutral (0), 2 = positive (1)
+LABEL_ENCODE_MAP = {-1: 0, 0: 1, 1: 2}
+LABEL_DECODE_MAP = {0: 'negative', 1: 'neutral', 2: 'positive'}
+
+# --- Model hyperparameters ---
+
+# LogisticRegression
+LR_C = 1.0
+LR_MAX_ITER = 1000
+LR_SOLVER = 'lbfgs'
+
+# RandomForestClassifier
+RF_N_ESTIMATORS = 200
+RF_MAX_DEPTH = None
+
+# MultinomialNB
+MNB_ALPHA = 0.1
+
+# XGBoost
+XGB_N_ESTIMATORS = 200
+XGB_MAX_DEPTH = 6
+XGB_LEARNING_RATE = 0.1
