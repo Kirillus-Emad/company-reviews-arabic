@@ -34,7 +34,7 @@ TEXT_COLUMN = 'decoded_emojis'
 TARGET_COLUMN = 'rating'
 
 # TF-IDF hyperparameters
-TF_IDF_MAX_FEATURES = 12000
+TF_IDF_MAX_FEATURES = 9000
 TF_IDF_NGRAM_RANGE = (1, 2)
 TF_IDF_SUBLINEAR_TF = True     # log(1+tf) as it's recommended for text classification
 
@@ -63,12 +63,12 @@ LR_SOLVER = 'lbfgs'
 
 # RandomForestClassifier
 RF_N_ESTIMATORS = 128
-RF_MAX_DEPTH = 90
+RF_MAX_DEPTH = 55
 
 # MultinomialNB
 MNB_ALPHA = 0.1
 
 # XGBoost
 XGB_N_ESTIMATORS = 200
-XGB_MAX_DEPTH = 20
+XGB_MAX_DEPTH = 10
 XGB_LEARNING_RATE = 0.1
