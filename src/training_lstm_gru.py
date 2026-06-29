@@ -214,7 +214,7 @@ def _select_embedding():
 # ── Training loop ─────────────────────────────────────────────────────────────
 
 def _train_one_model(model, train_loader, val_loader, criterion, epochs, patience,
-                     lr, weight_decay):
+                     lr, weight_decay, save_path):
     steps_per_epoch = len(train_loader)
     total_steps     = steps_per_epoch * epochs
     warmup_steps    = steps_per_epoch * LSTM_WARMUP_EPOCHS
@@ -227,7 +227,6 @@ def _train_one_model(model, train_loader, val_loader, criterion, epochs, patienc
 
     best_val_f1    = -1.0
     patience_count = 0
-    best_state     = None
     t0             = time.time()
 
     for epoch in range(1, epochs + 1):
@@ -268,7 +267,8 @@ def _train_one_model(model, train_loader, val_loader, criterion, epochs, patienc
         if val_f1 > best_val_f1:
             best_val_f1    = val_f1
             patience_count = 0
-            best_state     = {k: v.clone() for k, v in model.state_dict().items()}
+            torch.save(model.state_dict(), save_path)
+            print(f"\n  ★ New best  val_f1={best_val_f1:.4f}  → saved to {save_path}")
         else:
             patience_count += 1
             if patience_count >= patience:
@@ -276,7 +276,7 @@ def _train_one_model(model, train_loader, val_loader, criterion, epochs, patienc
                       f"(best val F1: {best_val_f1:.4f})")
                 break
 
-    model.load_state_dict(best_state)
+    model.load_state_dict(torch.load(save_path, map_location=DEVICE))
     return round(time.time() - t0, 2)
 
 
@@ -375,10 +375,12 @@ def main():
         _print_param_counts(model)
         print()
 
+        save_path  = os.path.join(LSTM_MODELS_DIR, f"{tag}.pt")
         train_time = _train_one_model(
             model, train_loader, val_loader, criterion,
             LSTM_EPOCHS, LSTM_EARLY_STOPPING_PATIENCE,
             LSTM_LR, LSTM_WEIGHT_DECAY,
+            save_path=save_path,
         )
 
         # ── Evaluate ───────────────────────────────────────────────────────────
@@ -414,9 +416,6 @@ def main():
             'test_time_sec':  test_time,
             'embedding':      embedding_type,
         }
-
-        torch.save(model.state_dict(),
-                   os.path.join(LSTM_MODELS_DIR, f"{tag}.pt"))
 
         print(f"\n[{idx}/{total}] {tag} DONE | "
               f"Test F1: {results[tag]['test']['f1']:.4f} | "

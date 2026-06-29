@@ -80,10 +80,11 @@ class EpochProgressCallback(TrainerCallback):
     def __init__(self, total_epochs, steps_per_epoch, train_log):
         self.total_epochs    = total_epochs
         self.steps_per_epoch = steps_per_epoch
-        self._train_log = train_log
-        self._bar    = None
-        self._loss   = "?"
-        self._epoch  = 0
+        self._train_log  = train_log
+        self._bar        = None
+        self._loss       = "?"
+        self._epoch      = 0
+        self._best_val_f1 = -1.0
 
     def on_epoch_begin(self, args, state, control, **kwargs):
         self._epoch += 1
@@ -129,6 +130,10 @@ class EpochProgressCallback(TrainerCallback):
         )
         self._bar.close()
         self._bar = None
+
+        if val_f1 > self._best_val_f1:
+            self._best_val_f1 = val_f1
+            print(f"  ★ New best  val_f1={self._best_val_f1:.4f}  → checkpoint saved")
 
     def on_train_end(self, args, state, control, **kwargs):
         if self._bar is not None:
@@ -339,6 +344,7 @@ def main():
         load_best_model_at_end=True,
         metric_for_best_model='f1',
         greater_is_better=True,
+        save_total_limit=1,
         logging_strategy='steps',
         logging_steps=max(1, steps_per_epoch // 10),  # ~10 loss updates per epoch
         report_to='none',
