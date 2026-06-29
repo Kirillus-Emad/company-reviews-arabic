@@ -3,24 +3,29 @@ import torch.nn as nn
 
 
 class RNNSentiment(nn.Module):
-    """LSTM or GRU, unidirectional or bidirectional, for sentiment classification.
-
+    """
     Architecture:
         Embedding (300-dim fastText)
-          → Dropout
-          → 1-layer RNN
-          → Dropout
-          → Linear(rnn_out → hidden) + LayerNorm + ReLU + Dropout   [hidden]
-          → Linear(hidden → num_classes)                             [output]
+          → BatchNorm1d(embed_dim) + Dropout(p)         [input regularisation]
+          → 1-layer RNN cell with variational recurrent dropout(rec_p)
+          → Dropout(p)                                   [output regularisation]
+          → Linear(rnn_out → hidden) + LayerNorm + ReLU + Dropout(p)  [hidden]
+          → Linear(hidden → num_classes)                               [output]
+
+    Variational recurrent dropout: one binary mask sampled per forward pass,
+    applied identically at every time step — same mask, whole sequence.
     """
 
-    def __init__(self, vocab_size, embed_dim, hidden_dim, num_layers,
-                 dropout, rnn_type='lstm', bidirectional=True,
+    def __init__(self, vocab_size, embed_dim, hidden_dim,
+                 dropout, rec_dropout=0.25,
+                 rnn_type='lstm', bidirectional=True,
                  num_classes=3, embedding_matrix=None):
         super().__init__()
         assert rnn_type in ('lstm', 'gru'), "rnn_type must be 'lstm' or 'gru'"
         self.rnn_type      = rnn_type
         self.bidirectional = bidirectional
+        self.hidden_dim    = hidden_dim
+        self.rec_dropout_p = rec_dropout
 
         if embedding_matrix is not None:
             self.embedding = nn.Embedding.from_pretrained(
@@ -32,23 +37,21 @@ class RNNSentiment(nn.Module):
             self.embedding = nn.Embedding(vocab_size, embed_dim, padding_idx=0)
             nn.init.normal_(self.embedding.weight, mean=0.0, std=0.1)
             with torch.no_grad():
-                self.embedding.weight[0].zero_()   # PAD stays zero
+                self.embedding.weight[0].zero_()
 
-        rnn_cls  = nn.LSTM if rnn_type == 'lstm' else nn.GRU
-        self.rnn = rnn_cls(
-            embed_dim,
-            hidden_dim,
-            num_layers=num_layers,
-            dropout=dropout if num_layers > 1 else 0.0,  # inter-layer dropout
-            bidirectional=bidirectional,
-            batch_first=True,
-        )
+        # BatchNorm on input: normalises each embedding dim across batch×time
+        self.input_bn = nn.BatchNorm1d(embed_dim)
 
-        self.dropout  = nn.Dropout(dropout)
-        directions    = 2 if bidirectional else 1
-        rnn_out_dim   = hidden_dim * directions
+        # Single-layer cells (LSTMCell/GRUCell) give step-level dropout control
+        cell_cls      = nn.LSTMCell if rnn_type == 'lstm' else nn.GRUCell
+        self.cell_fwd = cell_cls(embed_dim, hidden_dim)
+        if bidirectional:
+            self.cell_bwd = cell_cls(embed_dim, hidden_dim)
 
-        # 1 hidden layer + 1 output layer, dropout at every transition
+        self.embed_drop = nn.Dropout(dropout)
+        self.out_drop   = nn.Dropout(dropout)
+
+        rnn_out_dim = hidden_dim * (2 if bidirectional else 1)
         self.head = nn.Sequential(
             nn.Linear(rnn_out_dim, hidden_dim),
             nn.LayerNorm(hidden_dim),
@@ -57,17 +60,43 @@ class RNNSentiment(nn.Module):
             nn.Linear(hidden_dim, num_classes),
         )
 
-    def forward(self, x):
-        emb    = self.dropout(self.embedding(x))   # (B, L, E)
-        out, h = self.rnn(emb)
+    def _run_cell(self, cell, emb):
+        """Run one RNN cell over a sequence with variational recurrent dropout."""
+        B, L, _ = emb.shape
+        h = emb.new_zeros(B, self.hidden_dim)
+        c = emb.new_zeros(B, self.hidden_dim) if self.rnn_type == 'lstm' else None
 
-        if self.rnn_type == 'lstm':
-            h = h[0]                               # (h_n, c_n) → keep h_n
-
-        # h: (num_layers * directions, B, H)
-        if self.bidirectional:
-            h = torch.cat([h[-2], h[-1]], dim=1)   # last layer fwd+bwd → (B, H*2)
+        # Sample mask once — same mask applied at every time step (variational)
+        if self.training and self.rec_dropout_p > 0:
+            scale = 1.0 / (1.0 - self.rec_dropout_p)
+            mask  = torch.empty_like(h).bernoulli_(1.0 - self.rec_dropout_p).mul_(scale)
         else:
-            h = h[-1]                              # last layer → (B, H)
+            mask = None
 
-        return self.head(self.dropout(h))          # (B, num_classes)
+        for t in range(L):
+            if self.rnn_type == 'lstm':
+                h, c = cell(emb[:, t], (h, c))
+            else:
+                h = cell(emb[:, t], h)
+            if mask is not None:
+                h = h * mask
+
+        return h
+
+    def forward(self, x):
+        emb = self.embedding(x)           # (B, L, E)
+        B, L, E = emb.shape
+
+        # BatchNorm1d expects (N, C) — flatten time into batch, normalise, restore
+        emb = self.input_bn(emb.reshape(B * L, E)).reshape(B, L, E)
+        emb = self.embed_drop(emb)
+
+        h_fwd = self._run_cell(self.cell_fwd, emb)
+
+        if self.bidirectional:
+            h_bwd = self._run_cell(self.cell_bwd, emb.flip(1))
+            h = torch.cat([h_fwd, h_bwd], dim=1)
+        else:
+            h = h_fwd
+
+        return self.head(self.out_drop(h))

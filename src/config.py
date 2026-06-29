@@ -106,6 +106,7 @@ LSTM_EMBED_DIM               = 300   # matches fastText dim
 LSTM_HIDDEN_DIM              = 256
 LSTM_NUM_LAYERS              = 1
 LSTM_DROPOUT                 = 0.4
+LSTM_REC_DROPOUT             = 0.25  # variational recurrent dropout on hidden state
 LSTM_BATCH_SIZE              = 64
 LSTM_EPOCHS                  = 20
 LSTM_LR                      = 1e-3
