@@ -9,6 +9,9 @@ TEST_AUG_DF='../data/2-test_df.csv'
 PROC_TRAIN_DF='../data/3-proc_train_df.csv'
 PROC_TEST_DF='../data/3-proc_test_df.csv'
 
+TRANS_TRAIN_DF = '../data/4-trans_prepr_train_df.csv'
+TRANS_TEST_DF  = '../data/4-trans_prepr_test_df.csv'
+
 # Experiments / Logs
 EXPERIMENTS_DIR = '../experiments'
 TRAIN_AUG_LOG_PATH = '../experiments/train_augmentation_log.log'
@@ -80,3 +83,19 @@ COMNB_NORM=True
 XGB_N_ESTIMATORS = 200
 XGB_MAX_DEPTH = 15
 XGB_LEARNING_RATE = 0.1
+
+# ── Pretrained Transformer ───────────────────────────────────────────────────
+TRANSFORMER_MODEL_NAME      = 'xlm-roberta-base'
+TRANSFORMER_MODELS_DIR      = '../transformer model'
+TRANSFORMER_RESULTS_PATH    = '../transformer model/results.json'
+
+TRANS_MAX_LEN               = 128
+TRANS_BATCH_SIZE            = 16
+TRANS_EPOCHS                = 10
+TRANS_LR                    = 2e-5
+TRANS_WARMUP_RATIO          = 0.1
+TRANS_VAL_SPLIT             = 0.2
+TRANS_EARLY_STOPPING_PATIENCE = 3
+TRANS_LR_PATIENCE           = 2     # epochs without val_f1 improvement before LR reduction
+TRANS_LR_FACTOR             = 0.5   # multiply LR by this on plateau
+TRANS_PREP_N_JOBS           = int(os.environ.get('TRANS_PREP_N_JOBS', max(os.cpu_count(), 1)))
