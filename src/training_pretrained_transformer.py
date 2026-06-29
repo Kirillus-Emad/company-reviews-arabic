@@ -1,5 +1,6 @@
 import os
 import json
+import math
 import time
 import numpy as np
 import pandas as pd
@@ -15,6 +16,7 @@ from sklearn.metrics import (
     classification_report, confusion_matrix,
 )
 from torch.utils.data import Dataset
+from tqdm.auto import tqdm
 from transformers import (
     AutoTokenizer,
     AutoModelForSequenceClassification,
@@ -22,7 +24,9 @@ from transformers import (
     Trainer,
     EarlyStoppingCallback,
     get_cosine_schedule_with_warmup,
+    TrainerCallback,
 )
+from transformers.trainer_callback import ProgressCallback, PrinterCallback
 from config import (
     TRANS_TRAIN_DF, TRANS_TEST_DF,
     TEXT_COLUMN, TARGET_COLUMN,
@@ -31,6 +35,7 @@ from config import (
     TRANS_MAX_LEN, TRANS_BATCH_SIZE, TRANS_EPOCHS, TRANS_LR,
     TRANS_WARMUP_RATIO, TRANS_VAL_SPLIT,
     TRANS_EARLY_STOPPING_PATIENCE, TRANS_LR_DECAY_FACTOR,
+    TRANS_FREEZE_LAYERS,
     LABEL_ENCODE_MAP, LABEL_DECODE_MAP,
 )
 
@@ -64,11 +69,66 @@ class SentimentDataset(Dataset):
         }
 
 
+# ── Per-epoch progress bar (Keras-style) ──────────────────────────────────────
+
+class EpochProgressCallback(TrainerCallback):
+    """Replaces Trainer's built-in bars with one tqdm bar per epoch.
+
+    Shows live train-loss every ~10 steps and val-loss/val-F1 at epoch end.
+    """
+
+    def __init__(self, total_epochs, steps_per_epoch):
+        self.total_epochs    = total_epochs
+        self.steps_per_epoch = steps_per_epoch
+        self._bar    = None
+        self._loss   = "?"
+        self._epoch  = 0
+
+    def on_epoch_begin(self, args, state, control, **kwargs):
+        self._epoch += 1
+        self._loss   = "?"
+        self._bar    = tqdm(
+            total=self.steps_per_epoch,
+            desc=f"Epoch {self._epoch}/{self.total_epochs}",
+            unit="batch",
+            leave=True,
+            dynamic_ncols=True,
+        )
+
+    def on_step_end(self, args, state, control, **kwargs):
+        if self._bar is not None:
+            self._bar.update(1)
+            self._bar.set_postfix(loss=self._loss, refresh=False)
+
+    def on_log(self, args, state, control, logs=None, **kwargs):
+        if logs and "loss" in logs:
+            self._loss = f"{logs['loss']:.4f}"
+            if self._bar is not None:
+                self._bar.set_postfix(loss=self._loss, refresh=True)
+
+    def on_evaluate(self, args, state, control, metrics=None, **kwargs):
+        if not metrics or self._bar is None:
+            return
+        val_loss = metrics.get("eval_loss", 0.0)
+        val_f1   = metrics.get("eval_f1",   0.0)
+        self._bar.set_postfix(
+            loss=self._loss,
+            val_loss=f"{val_loss:.4f}",
+            val_f1=f"{val_f1:.4f}",
+            refresh=True,
+        )
+        self._bar.close()
+        self._bar = None
+
+    def on_train_end(self, args, state, control, **kwargs):
+        if self._bar is not None:
+            self._bar.close()
+            self._bar = None
+
+
 # ── Class-weighted Trainer ────────────────────────────────────────────────────
 
 def _make_weighted_trainer(class_weights_tensor):
-    """Return a Trainer subclass that uses weighted CrossEntropyLoss."""
-
     class WeightedTrainer(Trainer):
         def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
             labels  = inputs.pop('labels')
@@ -81,41 +141,65 @@ def _make_weighted_trainer(class_weights_tensor):
     return WeightedTrainer
 
 
+# ── Layer freezing ────────────────────────────────────────────────────────────
+
+def _freeze_bottom_layers(model, n_freeze):
+    """Freeze embeddings + bottom n_freeze encoder layers."""
+    n_layers = len(model.roberta.encoder.layer)
+    n_freeze = min(n_freeze, n_layers)
+
+    for param in model.roberta.embeddings.parameters():
+        param.requires_grad = False
+
+    for i in range(n_freeze):
+        for param in model.roberta.encoder.layer[i].parameters():
+            param.requires_grad = False
+
+    return n_freeze, n_layers
+
+
+def _print_param_counts(model, n_freeze, n_layers):
+    total     = sum(p.numel() for p in model.parameters())
+    trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    frozen    = total - trainable
+    print(f"\nModel parameters:")
+    print(f"  Total     : {total:>12,}")
+    print(f"  Trainable : {trainable:>12,}  ({100 * trainable / total:.1f}%)")
+    print(f"  Frozen    : {frozen:>12,}  ({100 * frozen / total:.1f}%)")
+    print(f"  Frozen scope  : embeddings + encoder layers [0–{n_freeze - 1}]")
+    print(f"  Trained scope : encoder layers [{n_freeze}–{n_layers - 1}] + classifier head\n")
+
+
 # ── LLRD optimizer ────────────────────────────────────────────────────────────
 
 def _build_llrd_optimizer(model, base_lr, decay_factor):
-    """Layer-wise Learning Rate Decay optimizer.
-
-    Classifier head gets base_lr.
-    Each encoder layer going downward is multiplied by decay_factor.
-    Embeddings get the smallest LR.
-    Bias / LayerNorm params get no weight decay.
-    """
-    no_decay = {'bias', 'LayerNorm.weight'}
+    """Layer-wise Learning Rate Decay — frozen layers produce no param groups."""
+    no_decay   = {'bias', 'LayerNorm.weight'}
     num_layers = model.config.num_hidden_layers  # 12 for xlm-roberta-base
-    groups = []
+    groups     = []
 
     def _add(params_iter, lr):
-        wd_params  = [p for n, p in params_iter if not any(nd in n for nd in no_decay)]
-        nwd_params = [p for n, p in params_iter if any(nd in n for nd in no_decay)]
+        wd_params  = [p for n, p in params_iter
+                      if p.requires_grad and not any(nd in n for nd in no_decay)]
+        nwd_params = [p for n, p in params_iter
+                      if p.requires_grad and any(nd in n for nd in no_decay)]
         if wd_params:
             groups.append({'params': wd_params,  'lr': lr, 'weight_decay': 0.01})
         if nwd_params:
             groups.append({'params': nwd_params, 'lr': lr, 'weight_decay': 0.0})
 
-    # Classifier head — highest LR (randomly initialized, needs to learn fast)
     _add(model.classifier.named_parameters(), base_lr)
 
-    # Encoder layers — decay LR from top (layer 11) down to layer 0
     for i in range(num_layers - 1, -1, -1):
         layer_lr = base_lr * (decay_factor ** (num_layers - i))
         _add(model.roberta.encoder.layer[i].named_parameters(), layer_lr)
 
-    # Embeddings — smallest LR (most general representations, least task-specific)
     embed_lr = base_lr * (decay_factor ** (num_layers + 1))
     _add(model.roberta.embeddings.named_parameters(), embed_lr)
 
-    print(f"  LLRD LR range: {embed_lr:.2e} (embeddings) → {base_lr:.2e} (classifier head)")
+    lrs = [g['lr'] for g in groups]
+    print(f"  LLRD: {len(groups)} param groups, "
+          f"LR {min(lrs):.2e} → {max(lrs):.2e}  (frozen layers excluded)")
     return AdamW(groups)
 
 
@@ -194,7 +278,7 @@ def main():
     print(f"  Classes: {CLASS_NAMES}\n")
 
     # ── Class weights ──────────────────────────────────────────────────────────
-    weights = compute_class_weight('balanced', classes=np.unique(y_train), y=y_train)
+    weights       = compute_class_weight('balanced', classes=np.unique(y_train), y=y_train)
     class_weights = torch.tensor(weights, dtype=torch.float)
     print(f"  Class weights: { {CLASS_NAMES[i]: round(float(w), 3) for i, w in enumerate(weights)} }")
 
@@ -207,19 +291,26 @@ def main():
         ignore_mismatched_sizes=True,
     )
 
+    # ── Freeze bottom layers ───────────────────────────────────────────────────
+    print(f"\nFreezing bottom {TRANS_FREEZE_LAYERS} encoder layers + embeddings...")
+    n_freeze, n_layers = _freeze_bottom_layers(model, TRANS_FREEZE_LAYERS)
+    _print_param_counts(model, n_freeze, n_layers)
+
     # ── Datasets ───────────────────────────────────────────────────────────────
     print("Tokenizing...")
     train_ds = SentimentDataset(X_train_txt, y_train, tokenizer, TRANS_MAX_LEN)
     val_ds   = SentimentDataset(X_val_txt,   y_val,   tokenizer, TRANS_MAX_LEN)
     test_ds  = SentimentDataset(X_test_txt,  y_test,  tokenizer, TRANS_MAX_LEN)
 
+    steps_per_epoch = math.ceil(len(train_ds) / TRANS_BATCH_SIZE)
+
     # ── LLRD optimizer + cosine schedule ──────────────────────────────────────
     print("\nBuilding LLRD optimizer...")
-    optimizer   = _build_llrd_optimizer(model, TRANS_LR, TRANS_LR_DECAY_FACTOR)
-    total_steps = (len(train_ds) // TRANS_BATCH_SIZE) * TRANS_EPOCHS
+    optimizer    = _build_llrd_optimizer(model, TRANS_LR, TRANS_LR_DECAY_FACTOR)
+    total_steps  = steps_per_epoch * TRANS_EPOCHS
     warmup_steps = int(total_steps * TRANS_WARMUP_RATIO)
-    scheduler   = get_cosine_schedule_with_warmup(optimizer, warmup_steps, total_steps)
-    print(f"  Total steps: {total_steps} | Warmup steps: {warmup_steps}")
+    scheduler    = get_cosine_schedule_with_warmup(optimizer, warmup_steps, total_steps)
+    print(f"  Steps/epoch: {steps_per_epoch} | Total: {total_steps} | Warmup: {warmup_steps}")
 
     # ── Training arguments ─────────────────────────────────────────────────────
     training_args = TrainingArguments(
@@ -232,7 +323,8 @@ def main():
         load_best_model_at_end=True,
         metric_for_best_model='f1',
         greater_is_better=True,
-        logging_strategy='epoch',
+        logging_strategy='steps',
+        logging_steps=max(1, steps_per_epoch // 10),  # ~10 loss updates per epoch
         report_to='none',
         seed=42,
         bf16=True,
@@ -249,6 +341,11 @@ def main():
         optimizers=(optimizer, scheduler),
         callbacks=[EarlyStoppingCallback(early_stopping_patience=TRANS_EARLY_STOPPING_PATIENCE)],
     )
+
+    # Replace Trainer's built-in progress/printer callbacks with our per-epoch bar
+    trainer.remove_callback(ProgressCallback)
+    trainer.remove_callback(PrinterCallback)
+    trainer.add_callback(EpochProgressCallback(TRANS_EPOCHS, steps_per_epoch))
 
     # ── Train ──────────────────────────────────────────────────────────────────
     print("\nStarting training...\n")

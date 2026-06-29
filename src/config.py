@@ -97,4 +97,5 @@ TRANS_WARMUP_RATIO          = 0.1
 TRANS_VAL_SPLIT             = 0.2
 TRANS_EARLY_STOPPING_PATIENCE = 3
 TRANS_LR_DECAY_FACTOR       = 0.95  # LLRD: each lower encoder layer gets LR * factor
+TRANS_FREEZE_LAYERS         = 8     # freeze embeddings + bottom N encoder layers (0–N-1); trains top 4 + head
 TRANS_PREP_N_JOBS           = int(os.environ.get('TRANS_PREP_N_JOBS', max(os.cpu_count(), 1)))
