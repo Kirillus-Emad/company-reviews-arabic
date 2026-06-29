@@ -34,7 +34,7 @@ TEXT_COLUMN = 'decoded_emojis'
 TARGET_COLUMN = 'rating'
 
 # TF-IDF hyperparameters
-TF_IDF_MAX_FEATURES = 9000
+TF_IDF_MAX_FEATURES = 8000
 TF_IDF_NGRAM_RANGE = (1, 2)
 TF_IDF_SUBLINEAR_TF = True     # log(1+tf) as it's recommended for text classification
 
