@@ -61,12 +61,11 @@ LR_C = 0.9
 LR_MAX_ITER=1000
 LR_SOLVER = 'lbfgs'
 
-# RandomForestClassifier
-RF_N_ESTIMATORS = 128
-RF_MAX_DEPTH = 55
-
 # MultinomialNB
 MNB_ALPHA = 0.1
+
+# ComplementNB
+CNB_ALPHA = 0.1
 
 # XGBoost
 XGB_N_ESTIMATORS = 200
