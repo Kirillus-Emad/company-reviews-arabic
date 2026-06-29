@@ -90,7 +90,7 @@ TRANSFORMER_MODELS_DIR      = '../transformer model'
 TRANSFORMER_RESULTS_PATH    = '../transformer model/results.json'
 
 TRANS_MAX_LEN               = 50
-TRANS_BATCH_SIZE            = 64
+TRANS_BATCH_SIZE            = 256
 TRANS_EPOCHS                = 15
 TRANS_LR                    = 1e-4   # CLS head LR (randomly init → needs fast learning)
 TRANS_WARMUP_EPOCHS         = 1      # epoch 1 = full LR warmup, then cosine decay
