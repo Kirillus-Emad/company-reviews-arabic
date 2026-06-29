@@ -77,9 +77,10 @@ class EpochProgressCallback(TrainerCallback):
     Shows live train-loss every ~10 steps and val-loss/val-F1 at epoch end.
     """
 
-    def __init__(self, total_epochs, steps_per_epoch):
+    def __init__(self, total_epochs, steps_per_epoch, train_log):
         self.total_epochs    = total_epochs
         self.steps_per_epoch = steps_per_epoch
+        self._train_log = train_log
         self._bar    = None
         self._loss   = "?"
         self._epoch  = 0
@@ -87,6 +88,8 @@ class EpochProgressCallback(TrainerCallback):
     def on_epoch_begin(self, args, state, control, **kwargs):
         self._epoch += 1
         self._loss   = "?"
+        self._train_log['preds']  = []
+        self._train_log['labels'] = []
         self._bar    = tqdm(
             total=self.steps_per_epoch,
             desc=f"Epoch {self._epoch}/{self.total_epochs}",
@@ -111,8 +114,15 @@ class EpochProgressCallback(TrainerCallback):
             return
         val_loss = metrics.get("eval_loss", 0.0)
         val_f1   = metrics.get("eval_f1",   0.0)
+
+        preds  = self._train_log.get('preds',  [])
+        labels = self._train_log.get('labels', [])
+        train_f1 = float(f1_score(labels, preds, average='weighted', zero_division=0)) \
+                   if preds else 0.0
+
         self._bar.set_postfix(
             loss=self._loss,
+            f1=f"{train_f1:.4f}",
             val_loss=f"{val_loss:.4f}",
             val_f1=f"{val_f1:.4f}",
             refresh=True,
@@ -128,7 +138,7 @@ class EpochProgressCallback(TrainerCallback):
 
 # ── Class-weighted Trainer ────────────────────────────────────────────────────
 
-def _make_weighted_trainer(class_weights_tensor):
+def _make_weighted_trainer(class_weights_tensor, train_log):
     class WeightedTrainer(Trainer):
         def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
             labels  = inputs.pop('labels')
@@ -136,6 +146,11 @@ def _make_weighted_trainer(class_weights_tensor):
             logits  = outputs.logits
             weight  = class_weights_tensor.to(logits.device)
             loss    = F.cross_entropy(logits, labels, weight=weight)
+            # accumulate train predictions (skip during eval/predict passes)
+            if model.training:
+                with torch.no_grad():
+                    train_log['preds'].extend(logits.argmax(-1).cpu().tolist())
+                    train_log['labels'].extend(labels.cpu().tolist())
             return (loss, outputs) if return_outputs else loss
 
     return WeightedTrainer
@@ -331,7 +346,8 @@ def main():
         bf16=True,
     )
 
-    WeightedTrainer = _make_weighted_trainer(class_weights)
+    train_log       = {'preds': [], 'labels': []}
+    WeightedTrainer = _make_weighted_trainer(class_weights, train_log)
 
     trainer = WeightedTrainer(
         model=model,
@@ -346,7 +362,7 @@ def main():
     # Replace Trainer's built-in progress/printer callbacks with our per-epoch bar
     trainer.remove_callback(ProgressCallback)
     trainer.remove_callback(PrinterCallback)
-    trainer.add_callback(EpochProgressCallback(TRANS_EPOCHS, steps_per_epoch))
+    trainer.add_callback(EpochProgressCallback(TRANS_EPOCHS, steps_per_epoch, train_log))
 
     # ── Train ──────────────────────────────────────────────────────────────────
     print("\nStarting training...\n")

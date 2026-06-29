@@ -232,26 +232,34 @@ def _train_one_model(model, train_loader, val_loader, criterion, epochs, patienc
 
     for epoch in range(1, epochs + 1):
         model.train()
-        running_loss = 0.0
+        running_loss  = 0.0
+        train_preds   = []
+        train_labels  = []
         bar = tqdm(train_loader, desc=f"Epoch {epoch}/{epochs}",
                    leave=True, unit="batch", dynamic_ncols=True)
 
         for bx, by in bar:
             bx, by = bx.to(DEVICE), by.to(DEVICE)
             optimizer.zero_grad()
-            loss = criterion(model(bx), by)
+            logits = model(bx)
+            loss   = criterion(logits, by)
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             optimizer.step()
             scheduler.step()                       # step-based: call after every batch
             running_loss += loss.item()
+            train_preds.extend(logits.argmax(1).detach().cpu().tolist())
+            train_labels.extend(by.cpu().tolist())
             bar.set_postfix(loss=f"{loss.item():.4f}", refresh=False)
 
         avg_train_loss = running_loss / len(train_loader)
+        train_f1       = f1_score(train_labels, train_preds,
+                                  average='weighted', zero_division=0)
         val_loss, val_f1, _, _ = _eval(model, val_loader, criterion)
 
         bar.set_postfix(
             loss=f"{avg_train_loss:.4f}",
+            f1=f"{train_f1:.4f}",
             val_loss=f"{val_loss:.4f}",
             val_f1=f"{val_f1:.4f}",
             lr=f"{scheduler.get_last_lr()[0]:.1e}",
