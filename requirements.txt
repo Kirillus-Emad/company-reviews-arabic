@@ -1,0 +1,49 @@
+# ── Arabic NLP ──────────────────────────────────────────────────────────────
+camel-tools==1.6.0
+pyspellchecker==0.8.3
+contractions==0.1.73
+emoji==2.14.1
+nlpaug==1.1.12
+
+# ── General NLP ─────────────────────────────────────────────────────────────
+nltk==3.9.1
+gensim==4.4.0          # word2vec embeddings used by nlpaug augmenter
+
+# ── Machine Learning ────────────────────────────────────────────────────────
+scikit-learn==1.8.0
+xgboost==3.1.1
+
+# ── Data & Math ─────────────────────────────────────────────────────────────
+numpy==2.1.3
+pandas==2.2.3
+scipy==1.15.2
+
+# ── Visualisation ───────────────────────────────────────────────────────────
+matplotlib==3.10.1
+seaborn==0.13.2
+
+# ── Utilities ───────────────────────────────────────────────────────────────
+tqdm==4.67.1
+joblib==1.4.2
+
+# ── Transitive deps that need explicit pinning ───────────────────────────────
+# camel-tools Arabic NLP chain
+cachetools==6.0.0
+alyahmor==0.2
+arramooz-pysqlite==0.4.2
+editdistance==0.8.1
+libqutrub==1.2.4.1
+marisa-trie==1.2.1
+muddler==0.1.3
+mysam-tagmanager==0.4
+Naftawayh==0.4
+PyArabic==0.6.15
+pyahocorasick==2.1.0
+qalsadi==0.5
+Tashaphyne==0.3.6
+langcodes==3.5.0
+language_data==1.3.0
+
+# contractions chain
+textsearch==0.0.24
+anyascii==0.3.2

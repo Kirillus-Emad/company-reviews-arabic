@@ -28,7 +28,6 @@ def get_models():
             random_state=42,
         ),
         "RandomForest": RandomForestClassifier(
-            n_estimators=RF_N_ESTIMATORS,
             max_depth=RF_MAX_DEPTH,
             class_weight='balanced',
             n_jobs=ML_N_JOBS,
