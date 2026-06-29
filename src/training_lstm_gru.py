@@ -264,13 +264,18 @@ def _train_one_model(model, train_loader, val_loader, criterion, epochs, patienc
                                   average='weighted', zero_division=0)
         val_loss, val_f1, _, _ = _eval(model, val_loader, criterion)
 
+        cur_lr = scheduler.get_last_lr()[0]
         bar.set_postfix(
             loss=f"{avg_train_loss:.4f}",
             f1=f"{train_f1:.4f}",
             val_loss=f"{val_loss:.4f}",
             val_f1=f"{val_f1:.4f}",
-            lr=f"{scheduler.get_last_lr()[0]:.1e}",
+            lr=f"{cur_lr:.1e}",
         )
+        print(f"  Epoch {epoch:>2}/{epochs}  "
+              f"loss={avg_train_loss:.4f}  f1={train_f1:.4f}  |  "
+              f"val_loss={val_loss:.4f}  val_f1={val_f1:.4f}  |  "
+              f"lr={cur_lr:.1e}")
 
         if val_f1 > best_val_f1:
             best_val_f1    = val_f1

@@ -44,7 +44,16 @@ class RNNSentiment(nn.Module):
 
         self.dropout = nn.Dropout(dropout)
         directions   = 2 if bidirectional else 1
-        self.fc      = nn.Linear(hidden_dim * directions, num_classes)
+        rnn_out_dim  = hidden_dim * directions
+
+        # Two-layer classifier head (same pattern as XLM-RoBERTa's head)
+        self.head = nn.Sequential(
+            nn.Linear(rnn_out_dim, hidden_dim),
+            nn.LayerNorm(hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_dim, num_classes),
+        )
 
     def forward(self, x):
         emb    = self.dropout(self.embedding(x))   # (B, L, E)
@@ -59,4 +68,4 @@ class RNNSentiment(nn.Module):
         else:
             h = h[-1]                              # last layer → (B, H)
 
-        return self.fc(self.dropout(h))            # (B, num_classes)
+        return self.head(self.dropout(h))          # (B, num_classes)
