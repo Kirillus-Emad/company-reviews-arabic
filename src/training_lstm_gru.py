@@ -219,11 +219,16 @@ def _train_one_model(model, train_loader, val_loader, criterion, epochs, patienc
     total_steps     = steps_per_epoch * epochs
     warmup_steps    = steps_per_epoch * LSTM_WARMUP_EPOCHS
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+    # AdamW decouples weight decay from gradient update — better generalisation than Adam
+    optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
     scheduler = get_cosine_schedule_with_warmup(optimizer, warmup_steps, total_steps)
 
+    use_amp = torch.cuda.is_available()
+    scaler  = torch.amp.GradScaler('cuda', enabled=use_amp)
+
     print(f"  Steps/epoch: {steps_per_epoch} | Total: {total_steps} | "
-          f"Warmup: {warmup_steps} ({LSTM_WARMUP_EPOCHS} epoch)")
+          f"Warmup: {warmup_steps} ({LSTM_WARMUP_EPOCHS} epoch) | "
+          f"AMP: {use_amp}")
 
     best_val_f1    = -1.0
     patience_count = 0
@@ -240,14 +245,17 @@ def _train_one_model(model, train_loader, val_loader, criterion, epochs, patienc
         for bx, by in bar:
             bx, by = bx.to(DEVICE), by.to(DEVICE)
             optimizer.zero_grad()
-            logits = model(bx)
-            loss   = criterion(logits, by)
-            loss.backward()
+            with torch.amp.autocast('cuda', enabled=use_amp):
+                logits = model(bx)
+                loss   = criterion(logits, by)
+            scaler.scale(loss).backward()
+            scaler.unscale_(optimizer)
             nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
-            optimizer.step()
-            scheduler.step()                       # step-based: call after every batch
+            scaler.step(optimizer)
+            scaler.update()
+            scheduler.step()
             running_loss += loss.item()
-            train_preds.extend(logits.argmax(1).detach().cpu().tolist())
+            train_preds.extend(logits.detach().argmax(1).cpu().tolist())
             train_labels.extend(by.cpu().tolist())
             bar.set_postfix(loss=f"{loss.item():.4f}", refresh=False)
 
