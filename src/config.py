@@ -96,6 +96,5 @@ TRANS_LR                    = 2e-5
 TRANS_WARMUP_RATIO          = 0.1
 TRANS_VAL_SPLIT             = 0.2
 TRANS_EARLY_STOPPING_PATIENCE = 3
-TRANS_LR_PATIENCE           = 2     # epochs without val_f1 improvement before LR reduction
-TRANS_LR_FACTOR             = 0.5   # multiply LR by this on plateau
+TRANS_LR_DECAY_FACTOR       = 0.95  # LLRD: each lower encoder layer gets LR * factor
 TRANS_PREP_N_JOBS           = int(os.environ.get('TRANS_PREP_N_JOBS', max(os.cpu_count(), 1)))
