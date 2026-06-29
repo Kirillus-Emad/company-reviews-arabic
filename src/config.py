@@ -66,6 +66,7 @@ MNB_ALPHA = 0.1
 
 # ComplementNB
 CNB_ALPHA = 0.1
+COMNB_NORM=True
 
 # XGBoost
 XGB_N_ESTIMATORS = 200

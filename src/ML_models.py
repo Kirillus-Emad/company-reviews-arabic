@@ -4,7 +4,7 @@ from xgboost import XGBClassifier
 from config import (
     ML_N_JOBS,
     LR_C, LR_MAX_ITER, LR_SOLVER,
-    MNB_ALPHA, CNB_ALPHA,
+    MNB_ALPHA, CNB_ALPHA,COMNB_NORM,
     XGB_N_ESTIMATORS, XGB_MAX_DEPTH, XGB_LEARNING_RATE,
 )
 
@@ -32,6 +32,7 @@ def get_models():
         ),
         "ComplementNB": ComplementNB(
             alpha=CNB_ALPHA,
+            norm=COMNB_NORM
         ),
         "XGBoost": XGBClassifier(
             n_estimators=XGB_N_ESTIMATORS,
