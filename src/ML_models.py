@@ -22,7 +22,6 @@ def get_models():
     return {
         "LogisticRegression": LogisticRegression(
             C=LR_C,
-            max_iter=LR_MAX_ITER,
             solver=LR_SOLVER,
             class_weight='balanced',
             n_jobs=ML_N_JOBS,
@@ -39,9 +38,7 @@ def get_models():
             alpha=MNB_ALPHA,
         ),
         "XGBoost": XGBClassifier(
-            n_estimators=XGB_N_ESTIMATORS,
             max_depth=XGB_MAX_DEPTH,
-            learning_rate=XGB_LEARNING_RATE,
             n_jobs=ML_N_JOBS,
             eval_metric='mlogloss',
             verbosity=0,

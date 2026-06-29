@@ -36,7 +36,7 @@ TARGET_COLUMN = 'rating'
 # TF-IDF hyperparameters
 TF_IDF_MAX_FEATURES = 10000
 TF_IDF_NGRAM_RANGE = (1, 2)
-TF_IDF_SUBLINEAR_TF = True     # log(1+tf) — recommended for text classification
+TF_IDF_SUBLINEAR_TF = True     # log(1+tf) as it's recommended for text classification
 
 # BOW Features
 BOW_FEATURES_DIR = '../BOW features'
@@ -58,17 +58,17 @@ LABEL_DECODE_MAP = {0: 'negative', 1: 'neutral', 2: 'positive'}
 
 # LogisticRegression
 LR_C = 1.0
-LR_MAX_ITER = 1000
+LR_MAX_ITER=1000
 LR_SOLVER = 'lbfgs'
 
 # RandomForestClassifier
-RF_N_ESTIMATORS = 200
-RF_MAX_DEPTH = None
+RF_N_ESTIMATORS = 128
+RF_MAX_DEPTH = 60
 
 # MultinomialNB
 MNB_ALPHA = 0.1
 
 # XGBoost
 XGB_N_ESTIMATORS = 200
-XGB_MAX_DEPTH = 6
+XGB_MAX_DEPTH = 60
 XGB_LEARNING_RATE = 0.1

@@ -5,7 +5,12 @@ import joblib
 import numpy as np
 import scipy.sparse
 import pandas as pd
-from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.metrics import (
+    accuracy_score, recall_score, precision_score, f1_score,
+    classification_report, confusion_matrix,
+)
 from config import (
     PROC_TRAIN_DF, PROC_TEST_DF,
     TARGET_COLUMN,
@@ -14,6 +19,36 @@ from config import (
     LABEL_ENCODE_MAP, LABEL_DECODE_MAP,
 )
 from ML_models import get_models
+
+CLASS_NAMES = [LABEL_DECODE_MAP[k] for k in sorted(LABEL_DECODE_MAP)]  # ['negative','neutral','positive']
+
+
+def _select_models(all_models):
+    names = list(all_models.keys())
+    print("\nAvailable models:")
+    for i, name in enumerate(names, start=1):
+        print(f"  {i}. {name}")
+    print(f"  0. Run ALL models")
+    print()
+
+    while True:
+        raw = input("Enter number(s) separated by spaces (e.g. 1 3) or 0 for all: ").strip()
+        if not raw:
+            continue
+        tokens = raw.split()
+        if not all(t.isdigit() for t in tokens):
+            print("  Please enter numbers only.")
+            continue
+        choices = [int(t) for t in tokens]
+        if any(c < 0 or c > len(names) for c in choices):
+            print(f"  Numbers must be between 0 and {len(names)}.")
+            continue
+        if 0 in choices:
+            selected = all_models
+        else:
+            selected = {names[c - 1]: all_models[names[c - 1]] for c in dict.fromkeys(choices)}
+        print(f"\nSelected: {', '.join(selected.keys())}\n")
+        return selected
 
 
 def _encode_labels(y):
@@ -27,6 +62,30 @@ def _compute_metrics(y_true, y_pred):
         "recall":    round(float(recall_score(y_true, y_pred, average='weighted', zero_division=0)), 4),
         "f1":        round(float(f1_score(y_true, y_pred, average='weighted', zero_division=0)), 4),
     }
+
+
+def _save_confusion_matrix(y_true, y_pred, title, save_path):
+    cm = confusion_matrix(y_true, y_pred)
+    fig, ax = plt.subplots(figsize=(6, 5))
+    sns.heatmap(
+        cm, annot=True, fmt='d', cmap='Blues',
+        xticklabels=CLASS_NAMES, yticklabels=CLASS_NAMES,
+        ax=ax,
+    )
+    ax.set_xlabel('Predicted')
+    ax.set_ylabel('Actual')
+    ax.set_title(title)
+    plt.tight_layout()
+    fig.savefig(save_path, dpi=120)
+    plt.close(fig)
+
+
+def _print_and_save_report(name, split, y_true, y_pred, report_lines):
+    report = classification_report(y_true, y_pred, target_names=CLASS_NAMES, zero_division=0)
+    header = f"\n{'='*50}\n{name} — {split} Classification Report\n{'='*50}"
+    print(header)
+    print(report)
+    report_lines.append(header + "\n" + report)
 
 
 def main():
@@ -45,35 +104,52 @@ def main():
     y_train = _encode_labels(y_train_raw)
     y_test  = _encode_labels(y_test_raw)
 
-    print(f"  Train: {X_train.shape} | classes: {np.unique(y_train)} ({LABEL_DECODE_MAP})")
+    print(f"  Train: {X_train.shape} | classes: {np.unique(y_train)} -> {CLASS_NAMES}")
     print(f"  Test : {X_test.shape}  | classes: {np.unique(y_test)}")
     print()
 
-    # Save label map alongside models for future inference
     joblib.dump(LABEL_DECODE_MAP, os.path.join(ML_MODELS_DIR, "label_decode_map.joblib"))
 
-    models = get_models()
-    total  = len(models)
+    models  = _select_models(get_models())
+    total   = len(models)
     results = {}
 
     # ── Train each model ───────────────────────────────────────────────────────
     for idx, (name, model) in enumerate(models.items(), start=1):
-        print(f"[{idx}/{total}] Training {name}...", flush=True)
+        print(f"\n[{idx}/{total}] Training {name}...", flush=True)
+        report_lines = []
 
         # Train
         t0 = time.time()
         model.fit(X_train, y_train)
         train_time = round(time.time() - t0, 2)
 
-        # Evaluate on train
-        train_preds  = model.predict(X_train)
+        # ── Train evaluation ───────────────────────────────────────────────────
+        train_preds   = model.predict(X_train)
         train_metrics = _compute_metrics(y_train, train_preds)
+        _print_and_save_report(name, "TRAIN", y_train, train_preds, report_lines)
+        _save_confusion_matrix(
+            y_train, train_preds,
+            title=f"{name} — Train Confusion Matrix",
+            save_path=os.path.join(ML_MODELS_DIR, f"{name}_cm_train.png"),
+        )
 
-        # Evaluate on test
+        # ── Test evaluation ────────────────────────────────────────────────────
         t0 = time.time()
-        test_preds = model.predict(X_test)
-        test_time  = round(time.time() - t0, 2)
+        test_preds  = model.predict(X_test)
+        test_time   = round(time.time() - t0, 2)
         test_metrics = _compute_metrics(y_test, test_preds)
+        _print_and_save_report(name, "TEST", y_test, test_preds, report_lines)
+        _save_confusion_matrix(
+            y_test, test_preds,
+            title=f"{name} — Test Confusion Matrix",
+            save_path=os.path.join(ML_MODELS_DIR, f"{name}_cm_test.png"),
+        )
+
+        # ── Save classification report text ────────────────────────────────────
+        report_path = os.path.join(ML_MODELS_DIR, f"{name}_report.txt")
+        with open(report_path, "w", encoding="utf-8") as f:
+            f.write("\n".join(report_lines))
 
         results[name] = {
             "train": train_metrics,
@@ -95,8 +171,9 @@ def main():
     with open(ML_RESULTS_PATH, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2, ensure_ascii=False)
 
-    print(f"\nAll done. Results saved to: {ML_RESULTS_PATH}")
-    print(f"Models saved to:            {ML_MODELS_DIR}/")
+    print(f"\nAll done.")
+    print(f"  Results JSON : {ML_RESULTS_PATH}")
+    print(f"  Models + reports + confusion matrices: {ML_MODELS_DIR}/")
     print()
 
     # ── Summary table (sorted by test F1 desc) ────────────────────────────────
