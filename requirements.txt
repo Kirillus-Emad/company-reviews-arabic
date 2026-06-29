@@ -27,12 +27,13 @@ tqdm==4.67.1
 joblib==1.4.2
 
 # ── Transformer training ─────────────────────────────────────────────────────
-torch==2.6.0
+# torch is provided by the runtime (Colab / local CUDA env) — do NOT pin it here.
+# Pinning torch==x.y.z downgrades Colab's pre-installed version and breaks torchvision.
 transformers==4.57.6
 accelerate>=0.26.0         # required by HuggingFace Trainer
 tokenizers==0.22.2
 huggingface-hub==0.34.4
-safetensors==0.5.3
+safetensors>=0.5.3
 
 # ── Transitive deps that need explicit pinning ───────────────────────────────
 # camel-tools Arabic NLP chain
