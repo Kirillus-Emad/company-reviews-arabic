@@ -326,17 +326,30 @@ def main():
     print(f"  Classes: {CLASS_NAMES}")
 
     # ── Vocabulary ─────────────────────────────────────────────────────────────
-    print("\nBuilding vocabulary from training text...")
-    vocab = Vocabulary(min_freq=LSTM_VOCAB_MIN_FREQ)
-    vocab.build(X_train_txt)
-    joblib.dump(vocab, os.path.join(LSTM_MODELS_DIR, 'vocabulary.joblib'))
+    VOCAB_CACHE  = os.path.join(LSTM_MODELS_DIR, 'vocabulary.joblib')
+    EMBED_CACHE  = os.path.join(LSTM_MODELS_DIR, 'fasttext_embed_cache.npy')
 
-    # ── Embedding matrix ───────────────────────────────────────────────────────
-    embedding_matrix = None
-    if embedding_type == 'fasttext':
-        print("\nLoading fastText aligned embeddings...")
-        embedding_matrix = build_fasttext_matrix(
-            vocab, FASTTEXT_AR_PATH, FASTTEXT_EN_PATH, LSTM_EMBED_DIM)
+    if embedding_type == 'fasttext' and os.path.exists(VOCAB_CACHE) and os.path.exists(EMBED_CACHE):
+        print("\nLoading cached vocabulary and fastText embeddings...")
+        vocab            = joblib.load(VOCAB_CACHE)
+        embedding_matrix = np.load(EMBED_CACHE)
+        print(f"  Vocabulary: {len(vocab):,} tokens")
+        print(f"  Embedding matrix: {embedding_matrix.shape}")
+    else:
+        print("\nBuilding vocabulary from training text...")
+        vocab = Vocabulary(min_freq=LSTM_VOCAB_MIN_FREQ)
+        vocab.build(X_train_txt)
+        joblib.dump(vocab, VOCAB_CACHE)
+        print(f"  Vocabulary: {len(vocab):,} tokens  (min_freq={LSTM_VOCAB_MIN_FREQ})")
+
+        # ── Embedding matrix ────────────────────────────────────────────────────
+        embedding_matrix = None
+        if embedding_type == 'fasttext':
+            print("\nLoading fastText aligned embeddings...")
+            embedding_matrix = build_fasttext_matrix(
+                vocab, FASTTEXT_AR_PATH, FASTTEXT_EN_PATH, LSTM_EMBED_DIM)
+            np.save(EMBED_CACHE, embedding_matrix)
+            print(f"  Cached to {EMBED_CACHE}")
 
     # ── Datasets & loaders ─────────────────────────────────────────────────────
     print("\nEncoding sequences...")
@@ -383,6 +396,7 @@ def main():
         _print_param_counts(model)
         print()
 
+        tag        = f"{model_name}_{embedding_type}"
         save_path  = os.path.join(LSTM_MODELS_DIR, f"{tag}.pt")
         train_time = _train_one_model(
             model, train_loader, val_loader, criterion,
@@ -396,8 +410,6 @@ def main():
         t0                  = time.time()
         _, _, test_preds, _ = _eval(model, test_loader, criterion)
         test_time           = round(time.time() - t0, 2)
-
-        tag = f"{model_name}_{embedding_type}"
 
         _print_and_save_report(
             f"{tag} — VALIDATION", y_val, val_preds,
