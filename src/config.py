@@ -89,13 +89,33 @@ TRANSFORMER_MODEL_NAME      = 'xlm-roberta-base'
 TRANSFORMER_MODELS_DIR      = '../transformer model'
 TRANSFORMER_RESULTS_PATH    = '../transformer model/results.json'
 
-TRANS_MAX_LEN               = 128
+TRANS_MAX_LEN               = 50
 TRANS_BATCH_SIZE            = 16
 TRANS_EPOCHS                = 10
-TRANS_LR                    = 2e-5
-TRANS_WARMUP_RATIO          = 0.1
+TRANS_LR                    = 1e-4   # CLS head LR (randomly init → needs fast learning)
+TRANS_WARMUP_EPOCHS         = 1      # epoch 1 = full LR warmup, then cosine decay
 TRANS_VAL_SPLIT             = 0.2
 TRANS_EARLY_STOPPING_PATIENCE = 3
-TRANS_LR_DECAY_FACTOR       = 0.95  # LLRD: each lower encoder layer gets LR * factor
+TRANS_LR_DECAY_FACTOR       = 0.5   # aggressive decay: each lower layer × 0.5
 TRANS_FREEZE_LAYERS         = 8     # freeze embeddings + bottom N encoder layers (0–N-1); trains top 4 + head
 TRANS_PREP_N_JOBS           = int(os.environ.get('TRANS_PREP_N_JOBS', max(os.cpu_count(), 1)))
+
+# ── LSTM / GRU ────────────────────────────────────────────────────────────────
+LSTM_MAX_SEQ_LEN             = 50
+LSTM_EMBED_DIM               = 300   # matches fastText dim
+LSTM_HIDDEN_DIM              = 256
+LSTM_NUM_LAYERS              = 2
+LSTM_DROPOUT                 = 0.4
+LSTM_BATCH_SIZE              = 64
+LSTM_EPOCHS                  = 20
+LSTM_LR                      = 1e-3
+LSTM_WEIGHT_DECAY            = 1e-4
+LSTM_EARLY_STOPPING_PATIENCE = 5
+LSTM_WARMUP_EPOCHS           = 1     # epoch 1 = full LR warmup, then cosine decay
+LSTM_VOCAB_MIN_FREQ          = 2     # drop words appearing fewer than N times
+
+LSTM_MODELS_DIR   = '../LSTM GRU models'
+LSTM_RESULTS_PATH = '../LSTM GRU models/results.json'
+
+FASTTEXT_AR_PATH  = '../fasttext/wiki.ar.align.vec'
+FASTTEXT_EN_PATH  = '../fasttext/wiki.en.align.vec'

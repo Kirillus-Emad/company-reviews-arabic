@@ -33,7 +33,7 @@ from config import (
     TRANSFORMER_MODEL_NAME,
     TRANSFORMER_MODELS_DIR, TRANSFORMER_RESULTS_PATH,
     TRANS_MAX_LEN, TRANS_BATCH_SIZE, TRANS_EPOCHS, TRANS_LR,
-    TRANS_WARMUP_RATIO, TRANS_VAL_SPLIT,
+    TRANS_WARMUP_EPOCHS, TRANS_VAL_SPLIT,
     TRANS_EARLY_STOPPING_PATIENCE, TRANS_LR_DECAY_FACTOR,
     TRANS_FREEZE_LAYERS,
     LABEL_ENCODE_MAP, LABEL_DECODE_MAP,
@@ -308,9 +308,10 @@ def main():
     print("\nBuilding LLRD optimizer...")
     optimizer    = _build_llrd_optimizer(model, TRANS_LR, TRANS_LR_DECAY_FACTOR)
     total_steps  = steps_per_epoch * TRANS_EPOCHS
-    warmup_steps = int(total_steps * TRANS_WARMUP_RATIO)
+    warmup_steps = steps_per_epoch * TRANS_WARMUP_EPOCHS   # 1 epoch warmup
     scheduler    = get_cosine_schedule_with_warmup(optimizer, warmup_steps, total_steps)
-    print(f"  Steps/epoch: {steps_per_epoch} | Total: {total_steps} | Warmup: {warmup_steps}")
+    print(f"  Steps/epoch: {steps_per_epoch} | Total: {total_steps} | "
+          f"Warmup: {warmup_steps} ({TRANS_WARMUP_EPOCHS} epoch)")
 
     # ── Training arguments ─────────────────────────────────────────────────────
     training_args = TrainingArguments(
