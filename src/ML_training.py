@@ -11,16 +11,37 @@ from sklearn.metrics import (
     accuracy_score, recall_score, precision_score, f1_score,
     classification_report, confusion_matrix,
 )
+from sklearn.naive_bayes import MultinomialNB, ComplementNB
 from config import (
     PROC_TRAIN_DF, PROC_TEST_DF,
     TARGET_COLUMN,
     BOW_TRAIN_PATH, BOW_TEST_PATH,
+    SVD_TRAIN_PATH, SVD_TEST_PATH,
     ML_MODELS_DIR, ML_RESULTS_PATH,
     LABEL_ENCODE_MAP, LABEL_DECODE_MAP,
 )
 from ML_models import get_models
 
+# NB models require non-negative features — incompatible with SVD output
+_NB_TYPES = (MultinomialNB, ComplementNB)
+
 CLASS_NAMES = [LABEL_DECODE_MAP[k] for k in sorted(LABEL_DECODE_MAP)]  # ['negative','neutral','positive']
+
+
+def _select_features():
+    print("\nWhich features do you want to use for training?")
+    print("  1. TF-IDF BOW features  (supports all models)")
+    print("  2. SVD reduced features (NB models excluded — SVD can produce negatives)")
+    print()
+    while True:
+        raw = input("Enter 1 or 2: ").strip()
+        if raw == '1':
+            print(f"  Using TF-IDF BOW features.\n")
+            return 'bow'
+        if raw == '2':
+            print(f"  Using SVD reduced features.\n")
+            return 'svd'
+        print("  Please enter 1 or 2.")
 
 
 def _select_models(all_models):
@@ -91,10 +112,18 @@ def _print_and_save_report(name, split, y_true, y_pred, report_lines):
 def main():
     os.makedirs(ML_MODELS_DIR, exist_ok=True)
 
+    # ── Select feature type ────────────────────────────────────────────────────
+    feature_type = _select_features()
+
     # ── Load features ──────────────────────────────────────────────────────────
-    print("Loading BOW features...")
-    X_train = scipy.sparse.load_npz(BOW_TRAIN_PATH)
-    X_test  = scipy.sparse.load_npz(BOW_TEST_PATH)
+    if feature_type == 'svd':
+        print("Loading SVD features...")
+        X_train = np.load(SVD_TRAIN_PATH)
+        X_test  = np.load(SVD_TEST_PATH)
+    else:
+        print("Loading TF-IDF BOW features...")
+        X_train = scipy.sparse.load_npz(BOW_TRAIN_PATH)
+        X_test  = scipy.sparse.load_npz(BOW_TEST_PATH)
 
     print("Loading labels...")
     y_train_raw = pd.read_csv(PROC_TRAIN_DF)[TARGET_COLUMN].values
@@ -110,7 +139,14 @@ def main():
 
     joblib.dump(LABEL_DECODE_MAP, os.path.join(ML_MODELS_DIR, "label_decode_map.joblib"))
 
-    models  = _select_models(get_models())
+    all_models = get_models()
+    if feature_type == 'svd':
+        nb_excluded = [n for n, m in all_models.items() if isinstance(m, _NB_TYPES)]
+        if nb_excluded:
+            print(f"  SVD mode: excluding NB models (need non-negative features): {nb_excluded}")
+            all_models = {n: m for n, m in all_models.items() if not isinstance(m, _NB_TYPES)}
+
+    models  = _select_models(all_models)
     total   = len(models)
     results = {}
 

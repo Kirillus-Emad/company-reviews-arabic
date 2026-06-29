@@ -49,6 +49,14 @@ ML_MODELS_DIR = '../ML models'
 ML_RESULTS_PATH = '../ML models/results.json'
 ML_N_JOBS = int(os.environ.get('ML_N_JOBS', max(os.cpu_count() - 1, 1)))
 
+# TruncatedSVD dimensional reduction
+SVD_COMPONENTS_SWEEP = [50, 100, 200, 500, 1000, 2000]
+SVD_FEATURES_DIR = '../SVD features'
+SVD_TRAIN_PATH = '../SVD features/svd_train.npy'
+SVD_TEST_PATH = '../SVD features/svd_test.npy'
+SVD_MODEL_PATH = '../SVD features/svd_model.joblib'
+SVD_VARIANCE_PLOT_PATH = '../SVD features/variance_sweep.png'
+
 # Label encoding: original -1/0/1 → encoded 0/1/2
 # 0 = negative (-1), 1 = neutral (0), 2 = positive (1)
 LABEL_ENCODE_MAP = {-1: 0, 0: 1, 1: 2}
