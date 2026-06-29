@@ -35,7 +35,7 @@ TARGET_COLUMN = 'rating'
 
 # TF-IDF hyperparameters
 TF_IDF_MAX_FEATURES = 8000
-TF_IDF_NGRAM_RANGE = (1, 2)
+TF_IDF_NGRAM_RANGE = (1)
 TF_IDF_SUBLINEAR_TF = True     # log(1+tf) as it's recommended for text classification
 
 # BOW Features
@@ -57,7 +57,7 @@ LABEL_DECODE_MAP = {0: 'negative', 1: 'neutral', 2: 'positive'}
 # --- Model hyperparameters ---
 
 # LogisticRegression
-LR_C = 0.9
+LR_C = 0.8
 LR_MAX_ITER=1000
 LR_SOLVER = 'lbfgs'
 
@@ -70,5 +70,5 @@ COMNB_NORM=True
 
 # XGBoost
 XGB_N_ESTIMATORS = 200
-XGB_MAX_DEPTH = 10
+XGB_MAX_DEPTH = 15
 XGB_LEARNING_RATE = 0.1
