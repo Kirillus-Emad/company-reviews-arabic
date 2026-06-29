@@ -90,14 +90,14 @@ TRANSFORMER_MODELS_DIR      = '../transformer model'
 TRANSFORMER_RESULTS_PATH    = '../transformer model/results.json'
 
 TRANS_MAX_LEN               = 50
-TRANS_BATCH_SIZE            = 16
-TRANS_EPOCHS                = 10
+TRANS_BATCH_SIZE            = 64
+TRANS_EPOCHS                = 15
 TRANS_LR                    = 1e-4   # CLS head LR (randomly init → needs fast learning)
 TRANS_WARMUP_EPOCHS         = 1      # epoch 1 = full LR warmup, then cosine decay
 TRANS_VAL_SPLIT             = 0.2
 TRANS_EARLY_STOPPING_PATIENCE = 3
 TRANS_LR_DECAY_FACTOR       = 0.5   # aggressive decay: each lower layer × 0.5
-TRANS_FREEZE_LAYERS         = 8     # freeze embeddings + bottom N encoder layers (0–N-1); trains top 4 + head
+TRANS_FREEZE_LAYERS         = 6     # freeze embeddings + bottom N encoder layers (0–N-1); trains top 4 + head
 TRANS_PREP_N_JOBS           = int(os.environ.get('TRANS_PREP_N_JOBS', max(os.cpu_count(), 1)))
 
 # ── LSTM / GRU ────────────────────────────────────────────────────────────────
