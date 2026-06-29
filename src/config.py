@@ -53,7 +53,7 @@ ML_RESULTS_PATH = '../ML models/results.json'
 ML_N_JOBS = int(os.environ.get('ML_N_JOBS', max(os.cpu_count() - 1, 1)))
 
 # TruncatedSVD dimensional reduction
-SVD_COMPONENTS_SWEEP = [50, 100, 200, 500, 1000, 2000]
+SVD_COMPONENTS_SWEEP = [500,2000,3500]
 SVD_FEATURES_DIR = '../SVD features'
 SVD_TRAIN_PATH = '../SVD features/svd_train.npy'
 SVD_TEST_PATH = '../SVD features/svd_test.npy'
