@@ -8,7 +8,7 @@ class RNNSentiment(nn.Module):
     Architecture:
         Embedding (300-dim fastText)
           → Dropout
-          → 2-layer RNN (dropout between layers)
+          → 1-layer RNN
           → Dropout
           → Linear(rnn_out → hidden) + LayerNorm + ReLU + Dropout   [hidden]
           → Linear(hidden → num_classes)                             [output]
