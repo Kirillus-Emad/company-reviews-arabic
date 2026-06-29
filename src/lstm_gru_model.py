@@ -8,11 +8,10 @@ class RNNSentiment(nn.Module):
     Architecture:
         Embedding (300-dim fastText)
           → Dropout
-          → 3-layer RNN (dropout between every layer)
+          → 2-layer RNN (dropout between layers)
           → Dropout
-          → Linear(rnn_out → hidden)  + LayerNorm + ReLU + Dropout   [hidden 1]
-          → Linear(hidden  → hidden//2) + LayerNorm + ReLU + Dropout  [hidden 2]
-          → Linear(hidden//2 → num_classes)                           [output]
+          → Linear(rnn_out → hidden) + LayerNorm + ReLU + Dropout   [hidden]
+          → Linear(hidden → num_classes)                             [output]
     """
 
     def __init__(self, vocab_size, embed_dim, hidden_dim, num_layers,
@@ -45,22 +44,17 @@ class RNNSentiment(nn.Module):
             batch_first=True,
         )
 
-        self.dropout    = nn.Dropout(dropout)
-        directions      = 2 if bidirectional else 1
-        rnn_out_dim     = hidden_dim * directions
-        hidden2_dim     = hidden_dim // 2
+        self.dropout  = nn.Dropout(dropout)
+        directions    = 2 if bidirectional else 1
+        rnn_out_dim   = hidden_dim * directions
 
-        # 2 hidden layers + 1 output layer, dropout between every layer
+        # 1 hidden layer + 1 output layer, dropout at every transition
         self.head = nn.Sequential(
             nn.Linear(rnn_out_dim, hidden_dim),
             nn.LayerNorm(hidden_dim),
             nn.ReLU(),
             nn.Dropout(dropout),
-            nn.Linear(hidden_dim, hidden2_dim),
-            nn.LayerNorm(hidden2_dim),
-            nn.ReLU(),
-            nn.Dropout(dropout),
-            nn.Linear(hidden2_dim, num_classes),
+            nn.Linear(hidden_dim, num_classes),
         )
 
     def forward(self, x):
