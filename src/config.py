@@ -114,8 +114,8 @@ LORA_TARGET_MODULES  = ['query', 'value']   # Q and V attention projections
 
 # ── LSTM / GRU ────────────────────────────────────────────────────────────────
 LSTM_MAX_SEQ_LEN             = 40
-LSTM_EMBED_DIM               = 300   # matches fastText dim
-LSTM_HIDDEN_DIM              = 64
+LSTM_EMBED_DIM               = 512 #300   # matches fastText dim
+LSTM_HIDDEN_DIM              = 32
 LSTM_NUM_LAYERS              = 2
 LSTM_DROPOUT                 = 0.4
 LSTM_REC_DROPOUT             = 0.4   # variational recurrent dropout on hidden state
