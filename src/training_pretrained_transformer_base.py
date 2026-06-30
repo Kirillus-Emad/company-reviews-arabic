@@ -177,7 +177,8 @@ def _print_param_counts(model, n_freeze, n_layers):
     print(f"  Total     : {total:>12,}")
     print(f"  Trainable : {trainable:>12,}  ({100 * trainable / total:.1f}%)")
     print(f"  Frozen    : {frozen:>12,}  ({100 * frozen / total:.1f}%)")
-    print(f"  Frozen scope  : embeddings + encoder layers [0–{n_freeze - 1}]")
+    frozen_enc = f"encoder layers [0–{n_freeze - 1}]" if n_freeze > 0 else "none"
+    print(f"  Frozen scope  : embeddings + {frozen_enc}")
     print(f"  Trained scope : encoder layers [{n_freeze}–{n_layers - 1}] + classifier head\n")
 
 
