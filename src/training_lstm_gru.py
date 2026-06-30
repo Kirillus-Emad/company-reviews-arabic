@@ -174,7 +174,7 @@ def _print_param_counts(model):
 # ── Interactive selection ─────────────────────────────────────────────────────
 
 def _select_models():
-    names = ['LSTM', 'BiLSTM', 'GRU', 'BiGRU']
+    names = ['LSTM', 'GRU']
     print("\nAvailable models:")
     for i, name in enumerate(names, 1):
         print(f"  {i}. {name}")
@@ -301,12 +301,9 @@ def main():
     selected_models = _select_models()
     embedding_type  = _select_embedding()
 
-    # (rnn_type, bidirectional)
     MODEL_CONFIGS = {
-        'LSTM':   ('lstm', False),
-        'BiLSTM': ('lstm', True),
-        'GRU':    ('gru',  False),
-        'BiGRU':  ('gru',  True),
+        'LSTM': ('lstm', False),
+        'GRU':  ('gru',  False),
     }
 
     # ── Data ───────────────────────────────────────────────────────────────────
@@ -401,15 +398,13 @@ def main():
         _print_param_counts(model)
         print()
 
-        # Bidirectional models have 2× output dim → converge faster → use lower LR
-        model_lr   = LSTM_LR * 0.5 if bidirectional else LSTM_LR
-        tag        = f"{model_name}_{embedding_type}"
-        save_path  = os.path.join(LSTM_MODELS_DIR, f"{tag}.pt")
-        print(f"  LR: {model_lr:.1e} ({'bidirectional' if bidirectional else 'unidirectional'})")
+        tag       = f"{model_name}_{embedding_type}"
+        save_path = os.path.join(LSTM_MODELS_DIR, f"{tag}.pt")
+        print(f"  LR: {LSTM_LR:.1e}")
         train_time = _train_one_model(
             model, train_loader, val_loader, criterion,
             LSTM_EPOCHS, LSTM_EARLY_STOPPING_PATIENCE,
-            model_lr, LSTM_WEIGHT_DECAY,
+            LSTM_LR, LSTM_WEIGHT_DECAY,
             save_path=save_path,
         )
 
