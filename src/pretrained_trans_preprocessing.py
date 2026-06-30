@@ -117,6 +117,13 @@ def main():
     df_test[TEXT_COLUMN]  = preprocess_column(
         df_test[TEXT_COLUMN],  'test',  TRANS_PREP_N_JOBS, logger)
 
+    for name, df in [('train', df_train), ('test', df_test)]:
+        before = len(df)
+        df.dropna(inplace=True)
+        df.drop_duplicates(inplace=True)
+        df.reset_index(drop=True, inplace=True)
+        logger.info("%s: removed %d nulls/duplicates (%d → %d rows)", name, before - len(df), before, len(df))
+
     df_train.to_csv(TRANS_TRAIN_DF, index=False)
     df_test.to_csv(TRANS_TEST_DF,  index=False)
 

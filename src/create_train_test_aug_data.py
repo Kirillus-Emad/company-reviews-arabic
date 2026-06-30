@@ -35,6 +35,13 @@ def main():
     )
     logger.info("Augmentation finished.")
 
+    for name, df in [('train', df_train), ('test', df_test)]:
+        before = len(df)
+        df.dropna(inplace=True)
+        df.drop_duplicates(inplace=True)
+        df.reset_index(drop=True, inplace=True)
+        logger.info("%s: removed %d nulls/duplicates (%d → %d rows)", name, before - len(df), before, len(df))
+
     df_train.to_csv(TRAIN_DF, index=False)
     df_test.to_csv(TEST_DF, index=False)
     logger.info("Saved train_df to %s (%d rows) and test_df to %s (%d rows)",

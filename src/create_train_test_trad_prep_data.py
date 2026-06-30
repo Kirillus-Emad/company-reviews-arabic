@@ -72,6 +72,13 @@ def main():
     logger.info("Starting traditional preprocessing on df_test (%d rows) with n_jobs=%d", len(df_test), TRAD_PREP_N_JOBS)
     df_test['decoded_emojis'] = preprocess_column(df_test['decoded_emojis'], 'test', TRAD_PREP_N_JOBS, logger)
 
+    for name, df in [('train', df_train), ('test', df_test)]:
+        before = len(df)
+        df.dropna(inplace=True)
+        df.drop_duplicates(inplace=True)
+        df.reset_index(drop=True, inplace=True)
+        logger.info("%s: removed %d nulls/duplicates (%d → %d rows)", name, before - len(df), before, len(df))
+
     df_train.to_csv(PROC_TRAIN_DF, index=False)
     df_test.to_csv(PROC_TEST_DF, index=False)
     logger.info("Saved proc_train_df to %s (%d rows) and proc_test_df to %s (%d rows)",
