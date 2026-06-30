@@ -45,11 +45,16 @@ class RNNSentiment(nn.Module):
 
         rnn_out_dim = hidden_dim * (2 if bidirectional else 1)
 
-        self.drop1  = nn.Dropout(dropout)
-        self.hidden = nn.Linear(rnn_out_dim, 64)
-        self.act    = nn.ReLU()
-        self.drop2  = nn.Dropout(dropout)
-        self.fc     = nn.Linear(64, num_classes)
+        self.head = nn.Sequential(
+            nn.Dropout(dropout),
+            nn.Linear(rnn_out_dim, 512), nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(512, 128),         nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(128, 32),          nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(32, num_classes),
+        )
 
     def _run_cell(self, cell, emb):
         """Step-wise RNN with variational recurrent dropout (same mask per sequence)."""
@@ -84,7 +89,4 @@ class RNNSentiment(nn.Module):
         else:
             h = h_fwd
 
-        h = self.drop1(h)
-        h = self.act(self.hidden(h))
-        h = self.drop2(h)
-        return self.fc(h)
+        return self.head(h)
