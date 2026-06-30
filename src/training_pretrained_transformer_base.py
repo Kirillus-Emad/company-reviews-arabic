@@ -32,6 +32,7 @@ from config import (
     TEXT_COLUMN, TARGET_COLUMN,
     TRANS_BASE_MODEL_NAME, TRANS_BASE_MODELS_DIR, TRANS_BASE_RESULTS_PATH,
     TRANS_BASE_BATCH_SIZE, TRANS_BASE_FREEZE_LAYERS, TRANS_BASE_LR_DECAY_FACTOR,
+    TRANS_BASE_RESUME_EPOCHS,
     TRANS_MAX_LEN, TRANS_EPOCHS, TRANS_LR,
     TRANS_WARMUP_EPOCHS, TRANS_VAL_SPLIT, TRANS_EARLY_STOPPING_PATIENCE,
     LABEL_ENCODE_MAP, LABEL_DECODE_MAP,
@@ -285,10 +286,18 @@ def main():
     class_weights = torch.tensor(weights, dtype=torch.float)
     print(f"  Class weights: { {CLASS_NAMES[i]: round(float(w), 3) for i, w in enumerate(weights)} }")
 
-    print(f"\nLoading {TRANS_BASE_MODEL_NAME}...")
-    tokenizer = AutoTokenizer.from_pretrained(TRANS_BASE_MODEL_NAME)
+    saved_model_exists = os.path.isfile(os.path.join(TRANS_BASE_MODELS_DIR, 'config.json'))
+    model_source       = TRANS_BASE_MODELS_DIR if saved_model_exists else TRANS_BASE_MODEL_NAME
+    num_epochs         = TRANS_BASE_RESUME_EPOCHS if saved_model_exists else TRANS_EPOCHS
+
+    if saved_model_exists:
+        print(f"\nResuming from checkpoint: {TRANS_BASE_MODELS_DIR}  ({num_epochs} more epochs)")
+    else:
+        print(f"\nLoading {TRANS_BASE_MODEL_NAME}...")
+
+    tokenizer = AutoTokenizer.from_pretrained(model_source)
     model     = AutoModelForSequenceClassification.from_pretrained(
-        TRANS_BASE_MODEL_NAME,
+        model_source,
         num_labels=3,
         ignore_mismatched_sizes=True,
     )
@@ -306,7 +315,7 @@ def main():
 
     print("\nBuilding LLRD optimizer...")
     optimizer    = _build_llrd_optimizer(model, TRANS_LR, TRANS_BASE_LR_DECAY_FACTOR)
-    total_steps  = steps_per_epoch * TRANS_EPOCHS
+    total_steps  = steps_per_epoch * num_epochs
     warmup_steps = steps_per_epoch * TRANS_WARMUP_EPOCHS
     scheduler    = get_cosine_schedule_with_warmup(optimizer, warmup_steps, total_steps)
     print(f"  Steps/epoch: {steps_per_epoch} | Total: {total_steps} | "
@@ -314,7 +323,7 @@ def main():
 
     training_args = TrainingArguments(
         output_dir=TRANS_BASE_MODELS_DIR,
-        num_train_epochs=TRANS_EPOCHS,
+        num_train_epochs=num_epochs,
         per_device_train_batch_size=TRANS_BASE_BATCH_SIZE,
         per_device_eval_batch_size=TRANS_BASE_BATCH_SIZE * 2,
         eval_strategy='epoch',
@@ -346,7 +355,7 @@ def main():
 
     trainer.remove_callback(ProgressCallback)
     trainer.remove_callback(PrinterCallback)
-    trainer.add_callback(EpochProgressCallback(TRANS_EPOCHS, steps_per_epoch, train_log))
+    trainer.add_callback(EpochProgressCallback(num_epochs, steps_per_epoch, train_log))
 
     print("\nStarting training...\n")
     t0_train   = time.time()

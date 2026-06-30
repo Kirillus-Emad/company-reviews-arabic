@@ -93,7 +93,7 @@ TRANS_MAX_LEN               = 50
 TRANS_BATCH_SIZE            = 128
 TRANS_EPOCHS                = 15
 TRANS_LR                    = 1e-4   # classifier head LR
-TRANS_WARMUP_EPOCHS         = 1      # epoch 1 = full LR warmup, then cosine decay
+TRANS_WARMUP_EPOCHS         = 2      # epoch 1 = full LR warmup, then cosine decay
 TRANS_VAL_SPLIT             = 0.2
 TRANS_EARLY_STOPPING_PATIENCE = 3
 TRANS_PREP_N_JOBS           = int(os.environ.get('TRANS_PREP_N_JOBS', max(os.cpu_count(), 1)))
@@ -102,9 +102,10 @@ TRANS_PREP_N_JOBS           = int(os.environ.get('TRANS_PREP_N_JOBS', max(os.cpu
 TRANS_BASE_MODEL_NAME      = 'xlm-roberta-base'
 TRANS_BASE_MODELS_DIR      = '../transformer base model'
 TRANS_BASE_RESULTS_PATH    = '../transformer base model/results.json'
-TRANS_BASE_BATCH_SIZE      = 256
-TRANS_BASE_FREEZE_LAYERS   = 6     # freeze embeddings + bottom 6 encoder layers
+TRANS_BASE_BATCH_SIZE      = 128
+TRANS_BASE_FREEZE_LAYERS   = 3     # freeze embeddings + bottom 3 encoder layers
 TRANS_BASE_LR_DECAY_FACTOR = 0.5   # each lower layer × 0.5
+TRANS_BASE_RESUME_EPOCHS   = 20    # extra epochs when resuming from saved checkpoint
 
 # ── LoRA ──────────────────────────────────────────────────────────────────────
 LORA_R               = 16           # adapter rank
