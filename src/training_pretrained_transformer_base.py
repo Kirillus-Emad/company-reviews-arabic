@@ -31,8 +31,8 @@ from config import (
     TRANS_TRAIN_DF, TRANS_TEST_DF,
     TEXT_COLUMN, TARGET_COLUMN,
     TRANS_BASE_MODEL_NAME, TRANS_BASE_MODELS_DIR, TRANS_BASE_RESULTS_PATH,
-    TRANS_BASE_FREEZE_LAYERS, TRANS_BASE_LR_DECAY_FACTOR,
-    TRANS_MAX_LEN, TRANS_BATCH_SIZE, TRANS_EPOCHS, TRANS_LR,
+    TRANS_BASE_BATCH_SIZE, TRANS_BASE_FREEZE_LAYERS, TRANS_BASE_LR_DECAY_FACTOR,
+    TRANS_MAX_LEN, TRANS_EPOCHS, TRANS_LR,
     TRANS_WARMUP_EPOCHS, TRANS_VAL_SPLIT, TRANS_EARLY_STOPPING_PATIENCE,
     LABEL_ENCODE_MAP, LABEL_DECODE_MAP,
 )
@@ -302,7 +302,7 @@ def main():
     val_ds   = SentimentDataset(X_val_txt,   y_val,   tokenizer, TRANS_MAX_LEN)
     test_ds  = SentimentDataset(X_test_txt,  y_test,  tokenizer, TRANS_MAX_LEN)
 
-    steps_per_epoch = math.ceil(len(train_ds) / TRANS_BATCH_SIZE)
+    steps_per_epoch = math.ceil(len(train_ds) / TRANS_BASE_BATCH_SIZE)
 
     print("\nBuilding LLRD optimizer...")
     optimizer    = _build_llrd_optimizer(model, TRANS_LR, TRANS_BASE_LR_DECAY_FACTOR)
@@ -315,8 +315,8 @@ def main():
     training_args = TrainingArguments(
         output_dir=TRANS_BASE_MODELS_DIR,
         num_train_epochs=TRANS_EPOCHS,
-        per_device_train_batch_size=TRANS_BATCH_SIZE,
-        per_device_eval_batch_size=TRANS_BATCH_SIZE * 2,
+        per_device_train_batch_size=TRANS_BASE_BATCH_SIZE,
+        per_device_eval_batch_size=TRANS_BASE_BATCH_SIZE * 2,
         eval_strategy='epoch',
         save_strategy='epoch',
         load_best_model_at_end=True,

@@ -102,7 +102,8 @@ TRANS_PREP_N_JOBS           = int(os.environ.get('TRANS_PREP_N_JOBS', max(os.cpu
 TRANS_BASE_MODEL_NAME      = 'xlm-roberta-base'
 TRANS_BASE_MODELS_DIR      = '../transformer base model'
 TRANS_BASE_RESULTS_PATH    = '../transformer base model/results.json'
-TRANS_BASE_FREEZE_LAYERS   = 6     # freeze embeddings + bottom 8 encoder layers
+TRANS_BASE_BATCH_SIZE      = 256
+TRANS_BASE_FREEZE_LAYERS   = 6     # freeze embeddings + bottom 6 encoder layers
 TRANS_BASE_LR_DECAY_FACTOR = 0.5   # each lower layer × 0.5
 
 # ── LoRA ──────────────────────────────────────────────────────────────────────
