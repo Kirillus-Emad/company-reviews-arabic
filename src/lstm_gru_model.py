@@ -47,9 +47,7 @@ class RNNSentiment(nn.Module):
 
         self.head = nn.Sequential(
             nn.Dropout(dropout),
-            nn.Linear(rnn_out_dim, 512), nn.ReLU(),
-            nn.Dropout(dropout),
-            nn.Linear(512, 128),         nn.ReLU(),
+            nn.Linear(rnn_out_dim, 128), nn.ReLU(),
             nn.Dropout(dropout),
             nn.Linear(128, 32),          nn.ReLU(),
             nn.Dropout(dropout),
