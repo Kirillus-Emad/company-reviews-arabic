@@ -98,6 +98,13 @@ TRANS_VAL_SPLIT             = 0.2
 TRANS_EARLY_STOPPING_PATIENCE = 3
 TRANS_PREP_N_JOBS           = int(os.environ.get('TRANS_PREP_N_JOBS', max(os.cpu_count(), 1)))
 
+# ── Transformer Base (LLRD fine-tuning, no LoRA) ─────────────────────────────
+TRANS_BASE_MODEL_NAME      = 'xlm-roberta-base'
+TRANS_BASE_MODELS_DIR      = '../transformer base model'
+TRANS_BASE_RESULTS_PATH    = '../transformer base model/results.json'
+TRANS_BASE_FREEZE_LAYERS   = 8     # freeze embeddings + bottom 8 encoder layers
+TRANS_BASE_LR_DECAY_FACTOR = 0.5   # each lower layer × 0.5
+
 # ── LoRA ──────────────────────────────────────────────────────────────────────
 LORA_R               = 16           # adapter rank
 LORA_ALPHA           = 32           # scaling = alpha/r = 2.0
