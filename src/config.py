@@ -85,20 +85,24 @@ XGB_MAX_DEPTH = 15
 XGB_LEARNING_RATE = 0.1
 
 # ── Pretrained Transformer ───────────────────────────────────────────────────
-TRANSFORMER_MODEL_NAME      = 'xlm-roberta-base'
+TRANSFORMER_MODEL_NAME      = 'xlm-roberta-large'
 TRANSFORMER_MODELS_DIR      = '../transformer model'
 TRANSFORMER_RESULTS_PATH    = '../transformer model/results.json'
 
 TRANS_MAX_LEN               = 50
-TRANS_BATCH_SIZE            = 256
+TRANS_BATCH_SIZE            = 16
 TRANS_EPOCHS                = 15
-TRANS_LR                    = 1e-4   # CLS head LR (randomly init → needs fast learning)
+TRANS_LR                    = 1e-4   # classifier head LR
 TRANS_WARMUP_EPOCHS         = 1      # epoch 1 = full LR warmup, then cosine decay
 TRANS_VAL_SPLIT             = 0.2
 TRANS_EARLY_STOPPING_PATIENCE = 3
-TRANS_LR_DECAY_FACTOR       = 0.5   # aggressive decay: each lower layer × 0.5
-TRANS_FREEZE_LAYERS         = 4     # freeze embeddings + bottom N encoder layers (0–N-1); trains top 4 + head
 TRANS_PREP_N_JOBS           = int(os.environ.get('TRANS_PREP_N_JOBS', max(os.cpu_count(), 1)))
+
+# ── LoRA ──────────────────────────────────────────────────────────────────────
+LORA_R               = 16           # adapter rank
+LORA_ALPHA           = 32           # scaling = alpha/r = 2.0
+LORA_DROPOUT         = 0.1
+LORA_TARGET_MODULES  = ['query', 'value']   # Q and V attention projections
 
 # ── LSTM / GRU ────────────────────────────────────────────────────────────────
 LSTM_MAX_SEQ_LEN             = 50
@@ -106,7 +110,7 @@ LSTM_EMBED_DIM               = 300   # matches fastText dim
 LSTM_HIDDEN_DIM              = 256
 LSTM_NUM_LAYERS              = 1
 LSTM_DROPOUT                 = 0.4
-LSTM_REC_DROPOUT             = 0.25  # variational recurrent dropout on hidden state
+LSTM_REC_DROPOUT             = 0.3   # variational recurrent dropout on hidden state
 LSTM_BATCH_SIZE              = 64
 LSTM_EPOCHS                  = 20
 LSTM_LR                      = 1e-3

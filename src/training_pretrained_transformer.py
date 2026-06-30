@@ -27,15 +27,15 @@ from transformers import (
     TrainerCallback,
 )
 from transformers.trainer_callback import ProgressCallback, PrinterCallback
+from peft import get_peft_model, LoraConfig, TaskType
 from config import (
     TRANS_TRAIN_DF, TRANS_TEST_DF,
     TEXT_COLUMN, TARGET_COLUMN,
     TRANSFORMER_MODEL_NAME,
     TRANSFORMER_MODELS_DIR, TRANSFORMER_RESULTS_PATH,
     TRANS_MAX_LEN, TRANS_BATCH_SIZE, TRANS_EPOCHS, TRANS_LR,
-    TRANS_WARMUP_EPOCHS, TRANS_VAL_SPLIT,
-    TRANS_EARLY_STOPPING_PATIENCE, TRANS_LR_DECAY_FACTOR,
-    TRANS_FREEZE_LAYERS,
+    TRANS_WARMUP_EPOCHS, TRANS_VAL_SPLIT, TRANS_EARLY_STOPPING_PATIENCE,
+    LORA_R, LORA_ALPHA, LORA_DROPOUT, LORA_TARGET_MODULES,
     LABEL_ENCODE_MAP, LABEL_DECODE_MAP,
 )
 
@@ -161,24 +161,22 @@ def _make_weighted_trainer(class_weights_tensor, train_log):
     return WeightedTrainer
 
 
-# ── Layer freezing ────────────────────────────────────────────────────────────
+# ── LoRA ─────────────────────────────────────────────────────────────────────
 
-def _freeze_bottom_layers(model, n_freeze):
-    """Freeze embeddings + bottom n_freeze encoder layers."""
-    n_layers = len(model.roberta.encoder.layer)
-    n_freeze = min(n_freeze, n_layers)
-
-    for param in model.roberta.embeddings.parameters():
-        param.requires_grad = False
-
-    for i in range(n_freeze):
-        for param in model.roberta.encoder.layer[i].parameters():
-            param.requires_grad = False
-
-    return n_freeze, n_layers
+def _apply_lora(model):
+    """Wrap model with LoRA adapters — freezes all encoder weights automatically."""
+    config = LoraConfig(
+        task_type      = TaskType.SEQ_CLS,
+        r              = LORA_R,
+        lora_alpha     = LORA_ALPHA,
+        lora_dropout   = LORA_DROPOUT,
+        target_modules = LORA_TARGET_MODULES,
+        bias           = "none",
+    )
+    return get_peft_model(model, config)
 
 
-def _print_param_counts(model, n_freeze, n_layers):
+def _print_param_counts(model):
     total     = sum(p.numel() for p in model.parameters())
     trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
     frozen    = total - trainable
@@ -186,40 +184,30 @@ def _print_param_counts(model, n_freeze, n_layers):
     print(f"  Total     : {total:>12,}")
     print(f"  Trainable : {trainable:>12,}  ({100 * trainable / total:.1f}%)")
     print(f"  Frozen    : {frozen:>12,}  ({100 * frozen / total:.1f}%)")
-    print(f"  Frozen scope  : embeddings + encoder layers [0–{n_freeze - 1}]")
-    print(f"  Trained scope : encoder layers [{n_freeze}–{n_layers - 1}] + classifier head\n")
+    print(f"  Trained scope : LoRA adapters (r={LORA_R}) on {LORA_TARGET_MODULES} + classifier head\n")
 
 
-# ── LLRD optimizer ────────────────────────────────────────────────────────────
+def _build_lora_optimizer(model, base_lr):
+    """Two LR groups: classifier head (highest) and LoRA adapters (lower)."""
+    no_decay = {'bias', 'LayerNorm.weight'}
+    groups   = []
 
-def _build_llrd_optimizer(model, base_lr, decay_factor):
-    """Layer-wise Learning Rate Decay — frozen layers produce no param groups."""
-    no_decay   = {'bias', 'LayerNorm.weight'}
-    num_layers = model.config.num_hidden_layers  # 12 for xlm-roberta-base
-    groups     = []
+    def _add(named_params, lr):
+        wd  = [p for n, p in named_params if p.requires_grad and not any(nd in n for nd in no_decay)]
+        nwd = [p for n, p in named_params if p.requires_grad and     any(nd in n for nd in no_decay)]
+        if wd:  groups.append({'params': wd,  'lr': lr, 'weight_decay': 0.01})
+        if nwd: groups.append({'params': nwd, 'lr': lr, 'weight_decay': 0.0})
 
-    def _add(params_iter, lr):
-        wd_params  = [p for n, p in params_iter
-                      if p.requires_grad and not any(nd in n for nd in no_decay)]
-        nwd_params = [p for n, p in params_iter
-                      if p.requires_grad and any(nd in n for nd in no_decay)]
-        if wd_params:
-            groups.append({'params': wd_params,  'lr': lr, 'weight_decay': 0.01})
-        if nwd_params:
-            groups.append({'params': nwd_params, 'lr': lr, 'weight_decay': 0.0})
+    head_params = [(n, p) for n, p in model.named_parameters()
+                   if p.requires_grad and 'classifier' in n]
+    lora_params = [(n, p) for n, p in model.named_parameters()
+                   if p.requires_grad and 'lora_' in n]
 
-    _add(model.classifier.named_parameters(), base_lr)
+    _add(head_params, base_lr)           # classifier: 1e-4
+    _add(lora_params, base_lr * 0.5)    # LoRA adapters: 5e-5
 
-    for i in range(num_layers - 1, -1, -1):
-        layer_lr = base_lr * (decay_factor ** (num_layers - i))
-        _add(model.roberta.encoder.layer[i].named_parameters(), layer_lr)
-
-    embed_lr = base_lr * (decay_factor ** (num_layers + 1))
-    _add(model.roberta.embeddings.named_parameters(), embed_lr)
-
-    lrs = [g['lr'] for g in groups]
-    print(f"  LLRD: {len(groups)} param groups, "
-          f"LR {min(lrs):.2e} → {max(lrs):.2e}  (frozen layers excluded)")
+    print(f"  Optimizer: classifier LR={base_lr:.1e} | LoRA LR={base_lr * 0.5:.1e} | "
+          f"{len(groups)} param groups")
     return AdamW(groups)
 
 
@@ -311,10 +299,11 @@ def main():
         ignore_mismatched_sizes=True,
     )
 
-    # ── Freeze bottom layers ───────────────────────────────────────────────────
-    print(f"\nFreezing bottom {TRANS_FREEZE_LAYERS} encoder layers + embeddings...")
-    n_freeze, n_layers = _freeze_bottom_layers(model, TRANS_FREEZE_LAYERS)
-    _print_param_counts(model, n_freeze, n_layers)
+    # ── Apply LoRA — freezes entire encoder, adds trainable adapters ───────────
+    print(f"\nApplying LoRA (r={LORA_R}, alpha={LORA_ALPHA}, "
+          f"target={LORA_TARGET_MODULES})...")
+    model = _apply_lora(model)
+    _print_param_counts(model)
 
     # ── Datasets ───────────────────────────────────────────────────────────────
     print("Tokenizing...")
@@ -324,9 +313,9 @@ def main():
 
     steps_per_epoch = math.ceil(len(train_ds) / TRANS_BATCH_SIZE)
 
-    # ── LLRD optimizer + cosine schedule ──────────────────────────────────────
-    print("\nBuilding LLRD optimizer...")
-    optimizer    = _build_llrd_optimizer(model, TRANS_LR, TRANS_LR_DECAY_FACTOR)
+    # ── Optimizer + cosine schedule ───────────────────────────────────────────
+    print("\nBuilding optimizer...")
+    optimizer    = _build_lora_optimizer(model, TRANS_LR)
     total_steps  = steps_per_epoch * TRANS_EPOCHS
     warmup_steps = steps_per_epoch * TRANS_WARMUP_EPOCHS   # 1 epoch warmup
     scheduler    = get_cosine_schedule_with_warmup(optimizer, warmup_steps, total_steps)
