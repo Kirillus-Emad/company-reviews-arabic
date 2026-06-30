@@ -6,17 +6,13 @@ class RNNSentiment(nn.Module):
     """
     Architecture:
         Embedding (300-dim fastText) — raw, no dropout before RNN
-          → 1-layer RNN cell with variational recurrent dropout(rec_p=0.3)
-            and input/output dropout(p) handled inside the cell
-          → Dropout(p)
-          → BatchNorm1d(rnn_out_dim)
-          → Dropout(p)
-          → Linear(rnn_out → num_classes)
+          → N-layer stacked RNN cells with variational recurrent dropout per layer
+          → Dropout → Linear(hidden → num_classes)
     """
 
-    def __init__(self, vocab_size, embed_dim, hidden_dim,
+    def __init__(self, vocab_size, embed_dim, hidden_dim, num_layers,
                  dropout, rec_dropout=0.3,
-                 rnn_type='lstm', bidirectional=True,
+                 rnn_type='lstm', bidirectional=False,
                  num_classes=3, embedding_matrix=None):
         super().__init__()
         assert rnn_type in ('lstm', 'gru'), "rnn_type must be 'lstm' or 'gru'"
@@ -37,52 +33,60 @@ class RNNSentiment(nn.Module):
             with torch.no_grad():
                 self.embedding.weight[0].zero_()
 
-        # Single-layer cells for step-level recurrent dropout control
-        cell_cls      = nn.LSTMCell if rnn_type == 'lstm' else nn.GRUCell
-        self.cell_fwd = cell_cls(embed_dim, hidden_dim)
+        # Stacked cells: first layer input=embed_dim, subsequent layers input=hidden_dim
+        cell_cls = nn.LSTMCell if rnn_type == 'lstm' else nn.GRUCell
+        self.cells_fwd = nn.ModuleList([
+            cell_cls(embed_dim if i == 0 else hidden_dim, hidden_dim)
+            for i in range(num_layers)
+        ])
         if bidirectional:
-            self.cell_bwd = cell_cls(embed_dim, hidden_dim)
+            self.cells_bwd = nn.ModuleList([
+                cell_cls(embed_dim if i == 0 else hidden_dim, hidden_dim)
+                for i in range(num_layers)
+            ])
 
         rnn_out_dim = hidden_dim * (2 if bidirectional else 1)
 
         self.head = nn.Sequential(
             nn.Dropout(dropout),
-            nn.Linear(rnn_out_dim, 128), nn.ReLU(),
-            nn.Dropout(dropout),
-            nn.Linear(128, 32),          nn.ReLU(),
-            nn.Dropout(dropout),
-            nn.Linear(32, num_classes),
+            nn.Linear(rnn_out_dim, num_classes),
         )
 
-    def _run_cell(self, cell, emb):
-        """Step-wise RNN with variational recurrent dropout (same mask per sequence)."""
+    def _run_cells(self, cells, emb):
+        """Stacked RNN cells with variational recurrent dropout per layer."""
         B, L, _ = emb.shape
-        h = emb.new_zeros(B, self.hidden_dim)
-        c = emb.new_zeros(B, self.hidden_dim) if self.rnn_type == 'lstm' else None
 
+        h_list = [emb.new_zeros(B, self.hidden_dim) for _ in cells]
+        c_list = [emb.new_zeros(B, self.hidden_dim) for _ in cells] \
+                 if self.rnn_type == 'lstm' else None
+
+        # One dropout mask per layer, same mask applied at every time step
         if self.training and self.rec_dropout_p > 0:
             scale = 1.0 / (1.0 - self.rec_dropout_p)
-            mask  = torch.empty_like(h).bernoulli_(1.0 - self.rec_dropout_p).mul_(scale)
+            masks = [torch.empty_like(h).bernoulli_(1.0 - self.rec_dropout_p).mul_(scale)
+                     for h in h_list]
         else:
-            mask = None
+            masks = [None] * len(cells)
 
         for t in range(L):
-            if self.rnn_type == 'lstm':
-                h, c = cell(emb[:, t], (h, c))
-            else:
-                h = cell(emb[:, t], h)
-            if mask is not None:
-                h = h * mask
+            inp = emb[:, t]
+            for i, cell in enumerate(cells):
+                if self.rnn_type == 'lstm':
+                    h_list[i], c_list[i] = cell(inp, (h_list[i], c_list[i]))
+                else:
+                    h_list[i] = cell(inp, h_list[i])
+                if masks[i] is not None:
+                    h_list[i] = h_list[i] * masks[i]
+                inp = h_list[i]   # output of layer i feeds into layer i+1
 
-        return h
+        return h_list[-1]         # final layer hidden state
 
     def forward(self, x):
-        emb = self.embedding(x)          # (B, L, E) — raw, no dropout
-
-        h_fwd = self._run_cell(self.cell_fwd, emb)
+        emb   = self.embedding(x)                    # (B, L, E) — raw, no dropout
+        h_fwd = self._run_cells(self.cells_fwd, emb)
 
         if self.bidirectional:
-            h_bwd = self._run_cell(self.cell_bwd, emb.flip(1))
+            h_bwd = self._run_cells(self.cells_bwd, emb.flip(1))
             h = torch.cat([h_fwd, h_bwd], dim=1)
         else:
             h = h_fwd
