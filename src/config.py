@@ -42,23 +42,23 @@ TF_IDF_NGRAM_RANGE = (1, 2)
 TF_IDF_SUBLINEAR_TF = True     # log(1+tf) as it's recommended for text classification
 
 # BOW Features
-BOW_FEATURES_DIR = '../BOW features'
-BOW_TRAIN_PATH = '../BOW features/tfidf_train.npz'
-BOW_TEST_PATH = '../BOW features/tfidf_test.npz'
-BOW_VECTORIZER_PATH = '../BOW features/tfidf_vectorizer.joblib'
+BOW_FEATURES_DIR = '../Trained models/BOW features'
+BOW_TRAIN_PATH = '../Trained models/BOW features/tfidf_train.npz'
+BOW_TEST_PATH = '../Trained models/BOW features/tfidf_test.npz'
+BOW_VECTORIZER_PATH = '../Trained models/BOW features/tfidf_vectorizer.joblib'
 
 # ML Models output
-ML_MODELS_DIR = '../ML models'
-ML_RESULTS_PATH = '../ML models/results.json'
+ML_MODELS_DIR = '../Trained models/ML'
+ML_RESULTS_PATH = '../Trained models/ML/results.json'
 ML_N_JOBS = int(os.environ.get('ML_N_JOBS', max(os.cpu_count() - 1, 1)))
 
 # TruncatedSVD dimensional reduction
 SVD_COMPONENTS_SWEEP = [500,2000,3500]
-SVD_FEATURES_DIR = '../SVD features'
-SVD_TRAIN_PATH = '../SVD features/svd_train.npy'
-SVD_TEST_PATH = '../SVD features/svd_test.npy'
-SVD_MODEL_PATH = '../SVD features/svd_model.joblib'
-SVD_VARIANCE_PLOT_PATH = '../SVD features/variance_sweep.png'
+SVD_FEATURES_DIR = '../Trained models/SVD features'
+SVD_TRAIN_PATH = '../Trained models/SVD features/svd_train.npy'
+SVD_TEST_PATH = '../Trained models/SVD features/svd_test.npy'
+SVD_MODEL_PATH = '../Trained models/SVD features/svd_model.joblib'
+SVD_VARIANCE_PLOT_PATH = '../Trained models/SVD features/variance_sweep.png'
 
 # Label encoding: original -1/0/1 → encoded 0/1/2
 # 0 = negative (-1), 1 = neutral (0), 2 = positive (1)
@@ -86,12 +86,12 @@ XGB_LEARNING_RATE = 0.1
 
 # ── Pretrained Transformer ───────────────────────────────────────────────────
 TRANSFORMER_MODEL_NAME      = 'xlm-roberta-large'
-TRANSFORMER_MODELS_DIR      = '../transformer model'
-TRANSFORMER_RESULTS_PATH    = '../transformer model/results.json'
+TRANSFORMER_MODELS_DIR      = '../Trained models/transformer large'
+TRANSFORMER_RESULTS_PATH    = '../Trained models/transformer large/results.json'
 
 TRANS_MAX_LEN               = 50
 TRANS_BATCH_SIZE            = 128
-TRANS_EPOCHS                = 15
+TRANS_EPOCHS                = 1
 TRANS_LR                    = 1e-4   # classifier head LR
 TRANS_WARMUP_EPOCHS         = 2      # epoch 1 = full LR warmup, then cosine decay
 TRANS_VAL_SPLIT             = 0.2
@@ -100,8 +100,8 @@ TRANS_PREP_N_JOBS           = int(os.environ.get('TRANS_PREP_N_JOBS', max(os.cpu
 
 # ── Transformer Base (LLRD fine-tuning, no LoRA) ─────────────────────────────
 TRANS_BASE_MODEL_NAME      = 'xlm-roberta-base'
-TRANS_BASE_MODELS_DIR      = '../transformer base model'
-TRANS_BASE_RESULTS_PATH    = '../transformer base model/results.json'
+TRANS_BASE_MODELS_DIR      = '../Trained models/transformer base'
+TRANS_BASE_RESULTS_PATH    = '../Trained models/transformer base/results.json'
 TRANS_BASE_BATCH_SIZE      = 256
 TRANS_BASE_FREEZE_LAYERS   = 0     # freeze embeddings + bottom 3 encoder layers
 TRANS_BASE_LR_DECAY_FACTOR = 0.5   # each lower layer × 0.5
@@ -128,8 +128,8 @@ LSTM_EARLY_STOPPING_PATIENCE = 12
 LSTM_WARMUP_EPOCHS           = 4     # epoch 1 = full LR warmup, then cosine decay
 LSTM_VOCAB_MIN_FREQ          = 2     # drop words appearing fewer than N times
 
-LSTM_MODELS_DIR   = '../LSTM GRU models'
-LSTM_RESULTS_PATH = '../LSTM GRU models/results.json'
+LSTM_MODELS_DIR   = '../Trained models/LSTM GRU'
+LSTM_RESULTS_PATH = '../Trained models/LSTM GRU/results.json'
 
 FASTTEXT_AR_PATH  = '../fasttext/wiki.ar.align.vec'
 FASTTEXT_EN_PATH  = '../fasttext/wiki.en.align.vec'
