@@ -336,6 +336,7 @@ def main():
         save_total_limit=1,
         logging_strategy='steps',
         logging_steps=max(1, steps_per_epoch // 10),  # ~10 loss updates per epoch
+        dataloader_num_workers=os.cpu_count(),
         report_to='none',
         seed=42,
         bf16=True,
