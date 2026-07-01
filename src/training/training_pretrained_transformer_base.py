@@ -147,7 +147,7 @@ def _make_weighted_trainer(class_weights_tensor, train_log):
             outputs = model(**inputs)
             logits  = outputs.logits
             weight  = class_weights_tensor.to(logits.device)
-            loss    = F.cross_entropy(logits, labels, weight=weight)
+            loss    = F.cross_entropy(logits, labels, weight=weight, label_smoothing=0.1)
             if model.training:
                 with torch.no_grad():
                     train_log['preds'].extend(logits.argmax(-1).cpu().tolist())

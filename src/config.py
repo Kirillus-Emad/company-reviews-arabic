@@ -92,7 +92,7 @@ TRANSFORMER_RESULTS_PATH    = '../Trained models/transformer large/results.json'
 TRANS_MAX_LEN               = 50
 TRANS_BATCH_SIZE            = 128
 TRANS_EPOCHS                = 20
-TRANS_LR                    = 1e-4   # classifier head LR
+TRANS_LR                    = 3e-5   # classifier head LR
 TRANS_WARMUP_EPOCHS         = 2      # epoch 1 = full LR warmup, then cosine decay
 TRANS_VAL_SPLIT             = 0.2
 TRANS_EARLY_STOPPING_PATIENCE = 3
@@ -103,8 +103,8 @@ TRANS_BASE_MODEL_NAME      = 'cardiffnlp/twitter-xlm-roberta-base'
 TRANS_BASE_MODELS_DIR      = '../Trained models/transformer twitter base'
 TRANS_BASE_RESULTS_PATH    = '../Trained models/transformer twitter base/results.json'
 TRANS_BASE_BATCH_SIZE      = 256
-TRANS_BASE_FREEZE_LAYERS   = 0     # freeze embeddings + bottom 3 encoder layers
-TRANS_BASE_LR_DECAY_FACTOR = 0.9   # each lower layer × 0.9
+TRANS_BASE_FREEZE_LAYERS   = 6     # freeze embeddings + bottom 6 encoder layers
+TRANS_BASE_LR_DECAY_FACTOR = 0.85  # each lower layer × 0.85
 TRANS_BASE_RESUME_EPOCHS   = 20    # extra epochs when resuming from saved checkpoint
 
 # ── LoRA ──────────────────────────────────────────────────────────────────────
