@@ -95,7 +95,7 @@ TRANS_EPOCHS                = 20
 TRANS_LR                    = 2e-5   # classifier head LR
 TRANS_WARMUP_EPOCHS         = 2      # epoch 1 = full LR warmup, then cosine decay
 TRANS_VAL_SPLIT             = 0.2
-TRANS_EARLY_STOPPING_PATIENCE = 5
+TRANS_EARLY_STOPPING_PATIENCE = 3
 TRANS_PREP_N_JOBS           = int(os.environ.get('TRANS_PREP_N_JOBS', max(os.cpu_count(), 1)))
 
 # ── Transformer Base (LLRD fine-tuning, no LoRA) ─────────────────────────────
