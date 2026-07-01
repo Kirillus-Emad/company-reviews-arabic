@@ -98,10 +98,23 @@ def _augment_rows_worker(args):
     rng = random.Random(seed)
 
     aug_rows = []
-    for _ in tqdm(range(n_rows), desc=label, position=0, leave=True):
-        row = cls_df.iloc[rng.randrange(len(cls_df))].copy()
-        row[text_column] = augment_text(row[text_column], augmenters)
-        aug_rows.append(row)
+    max_attempts = n_rows * 10
+    attempts = 0
+
+    with tqdm(total=n_rows, desc=label, position=0, leave=True) as pbar:
+        while len(aug_rows) < n_rows and attempts < max_attempts:
+            attempts += 1
+            row = cls_df.iloc[rng.randrange(len(cls_df))].copy()
+            original_text = row[text_column]
+            augmented_text = augment_text(original_text, augmenters)
+
+            if not augmented_text or augmented_text == original_text:
+                continue
+
+            row[text_column] = augmented_text
+            aug_rows.append(row)
+            pbar.update(1)
+
     return aug_rows
 
 
@@ -181,8 +194,13 @@ def augment_dataframe(df_train, text_column, target_column, aravec_bin_path,
             df_aug_parts.append(pd.DataFrame(rows))
 
     df_augmented = pd.concat(df_aug_parts, ignore_index=True)
+
+    before = len(df_augmented)
+    df_augmented.dropna(subset=[text_column], inplace=True)
+    df_augmented.drop_duplicates(subset=[text_column], inplace=True)
     df_augmented = df_augmented.sample(frac=1, random_state=random_state).reset_index(drop=True)
 
+    log.info("Dropped %d null/duplicate rows after augmentation (%d → %d)", before - len(df_augmented), before, len(df_augmented))
     log.info("Final augmented train shape: %s", df_augmented.shape)
     log.info("Final class counts: %s", df_augmented[target_column].value_counts().to_dict())
 

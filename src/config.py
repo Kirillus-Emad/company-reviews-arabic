@@ -2,7 +2,7 @@ import os
 
 # Data Paths
 ORIGINAL_DATA_PATH='../data/0-CompanyReviews.csv'
-EDA_DATA_PATH='../data/1-df_eda.csv'
+EDA_DATA_PATH='../data/1-full_fixed_df.csv'
 TRAIN_AUG_DF='../data/2-train_df.csv'
 TEST_AUG_DF='../data/2-test_df.csv'
 
@@ -104,7 +104,7 @@ TRANS_BASE_MODELS_DIR      = '../Trained models/transformer twitter base'
 TRANS_BASE_RESULTS_PATH    = '../Trained models/transformer twitter base/results.json'
 TRANS_BASE_BATCH_SIZE      = 256
 TRANS_BASE_FREEZE_LAYERS   = 0     # freeze embeddings + bottom 3 encoder layers
-TRANS_BASE_LR_DECAY_FACTOR = 0.5   # each lower layer × 0.5
+TRANS_BASE_LR_DECAY_FACTOR = 0.9   # each lower layer × 0.9
 TRANS_BASE_RESUME_EPOCHS   = 20    # extra epochs when resuming from saved checkpoint
 
 # ── LoRA ──────────────────────────────────────────────────────────────────────
