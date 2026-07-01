@@ -1,4 +1,6 @@
-2026-06-29 06:52:31,345 INFO Transformer preprocessing: train=38031 rows, test=10005 rows, n_jobs=24
-2026-06-29 06:53:32,835 INFO Preprocessed 38031 rows (train) in 61.49s using n_jobs=24
-2026-06-29 06:53:48,384 INFO Preprocessed 10005 rows (test) in 15.54s using n_jobs=24
-2026-06-29 06:53:48,462 INFO Saved ../data/4-trans_prepr_train_df.csv (38031 rows) and ../data/4-trans_prepr_test_df.csv (10005 rows)
+2026-07-01 09:45:06,927 INFO Transformer preprocessing: train=30222 rows, test=9919 rows, n_jobs=24
+2026-07-01 09:45:48,779 INFO Preprocessed 30222 rows (train) in 41.85s using n_jobs=24
+2026-07-01 09:46:10,253 INFO Preprocessed 9919 rows (test) in 21.47s using n_jobs=24
+2026-07-01 09:46:10,275 INFO train: removed 540 nulls/duplicates (30222 → 29682 rows)
+2026-07-01 09:46:10,281 INFO test: removed 144 nulls/duplicates (9919 → 9775 rows)
+2026-07-01 09:46:10,338 INFO Saved ../data/4-trans_prepr_train_df.csv (29682 rows) and ../data/4-trans_prepr_test_df.csv (9775 rows)

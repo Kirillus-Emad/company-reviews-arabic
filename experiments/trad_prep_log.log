@@ -1,0 +1,7 @@
+2026-07-01 09:41:04,989 - INFO - Starting traditional preprocessing on df_train (30222 rows) with n_jobs=24
+2026-07-01 09:43:13,369 - INFO - Preprocessed 30222 rows (train) using n_jobs=24 in 128.38s
+2026-07-01 09:43:13,374 - INFO - Starting traditional preprocessing on df_test (9919 rows) with n_jobs=24
+2026-07-01 09:44:21,258 - INFO - Preprocessed 9919 rows (test) using n_jobs=24 in 67.88s
+2026-07-01 09:44:21,279 - INFO - train: removed 3110 nulls/duplicates (30222 → 27112 rows)
+2026-07-01 09:44:21,285 - INFO - test: removed 797 nulls/duplicates (9919 → 9122 rows)
+2026-07-01 09:44:21,335 - INFO - Saved proc_train_df to ../data/3-proc_train_df.csv (27112 rows) and proc_test_df to ../data/3-proc_test_df.csv (9122 rows)

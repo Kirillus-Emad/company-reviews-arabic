@@ -1,10 +1,12 @@
-2026-06-27 10:49:28,087 - INFO - Starting augmentation on df_train with n_jobs=24
-2026-06-27 10:49:28,088 - INFO - Class counts before augmentation: {1: 17922, -1: 10647, 0: 1443}
-2026-06-27 10:49:28,088 - INFO - Minority classes (ratio<0.60): [-1, 0]
-2026-06-27 10:49:28,089 - INFO - Class -1: current=10647, target=14337, max_allowed=31941, needed=3690
-2026-06-27 10:49:28,089 - INFO - Class 0: current=1443, target=14337, max_allowed=4329, needed=4329
-2026-06-27 11:08:07,309 - INFO - Generated 8019 augmented rows using n_jobs=24 in 1119.22s
-2026-06-27 11:08:07,588 - INFO - Final augmented train shape: (38031, 2)
-2026-06-27 11:08:07,589 - INFO - Final class counts: {1: 17922, -1: 14337, 0: 5772}
-2026-06-27 11:08:07,606 - INFO - Augmentation finished.
-2026-06-27 11:08:07,834 - INFO - Saved train_df to ../data/train_df.csv (38031 rows) and test_df to ../data/test_df.csv (10005 rows)
+2026-07-01 09:26:46,426 - INFO - Starting augmentation on df_train with n_jobs=24
+2026-07-01 09:26:46,427 - INFO - Class counts before augmentation: {1: 18167, -1: 11529, 0: 316}
+2026-07-01 09:26:46,427 - INFO - Minority classes (ratio<0.60): [0]
+2026-07-01 09:26:46,427 - INFO - Class 0: current=316, target=14533, max_allowed=948, needed=948
+2026-07-01 09:29:15,184 - INFO - Generated 948 augmented rows using n_jobs=24 in 148.76s
+2026-07-01 09:29:15,235 - INFO - Dropped 738 null/duplicate rows after augmentation (30960 → 30222)
+2026-07-01 09:29:15,236 - INFO - Final augmented train shape: (30222, 2)
+2026-07-01 09:29:15,236 - INFO - Final class counts: {1: 17654, -1: 11322, 0: 1246}
+2026-07-01 09:29:15,238 - INFO - Augmentation finished.
+2026-07-01 09:29:15,253 - INFO - train: removed 0 nulls/duplicates (30222 → 30222 rows)
+2026-07-01 09:29:15,259 - INFO - test: removed 86 nulls/duplicates (10005 → 9919 rows)
+2026-07-01 09:29:15,319 - INFO - Saved train_df to ../data/2-train_df.csv (30222 rows) and test_df to ../data/2-test_df.csv (9919 rows)

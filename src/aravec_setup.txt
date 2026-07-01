@@ -8,6 +8,7 @@ aravec_bin_path argument).
 Step 1: Install dependencies
 -----------------------------
 !pip install nlpaug gensim --quiet
+!pip install numpy==1.26.4
 
 Step 2: Download AraVec (Twitter CBOW 100-dim — smallest & fastest)
 ---------------------------------------------------------------------
