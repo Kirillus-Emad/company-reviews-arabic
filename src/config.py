@@ -89,7 +89,7 @@ TRANSFORMER_MODEL_NAME      = 'xlm-roberta-large'
 TRANSFORMER_MODELS_DIR      = '../Trained models/transformer large'
 TRANSFORMER_RESULTS_PATH    = '../Trained models/transformer large/results.json'
 
-TRANS_MAX_LEN               = 40
+TRANS_MAX_LEN               = 50
 TRANS_BATCH_SIZE            = 128
 TRANS_EPOCHS                = 20
 TRANS_LR                    = 1e-4   # classifier head LR
@@ -114,7 +114,7 @@ LORA_DROPOUT         = 0.1
 LORA_TARGET_MODULES  = ['query', 'value']   # Q and V attention projections
 
 # ── LSTM / GRU ────────────────────────────────────────────────────────────────
-LSTM_MAX_SEQ_LEN             = 40
+LSTM_MAX_SEQ_LEN             = 50
 LSTM_EMBED_DIM               = 300         # matches fastText dim
 LSTM_HIDDEN_DIM              = 128
 LSTM_NUM_LAYERS              = 1
