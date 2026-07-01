@@ -24,6 +24,7 @@ seaborn==0.13.2
 # ── Utilities ───────────────────────────────────────────────────────────────
 tqdm==4.67.1
 joblib==1.4.2
+gradio>=4.0.0
 
 # ── Transformer training ─────────────────────────────────────────────────────
 # torch is provided by the runtime (Colab / local CUDA env) — do NOT pin it here.
