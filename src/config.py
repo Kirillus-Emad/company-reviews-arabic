@@ -103,7 +103,7 @@ TRANS_BASE_MODEL_NAME      = 'cardiffnlp/twitter-xlm-roberta-base'
 TRANS_BASE_MODELS_DIR      = '../Trained models/transformer twitter base'
 TRANS_BASE_RESULTS_PATH    = '../Trained models/transformer twitter base/results.json'
 TRANS_BASE_BATCH_SIZE      = 256
-TRANS_BASE_FREEZE_LAYERS   = 6     # freeze embeddings + bottom 3 encoder layers
+TRANS_BASE_FREEZE_LAYERS   = 0     # freeze embeddings + bottom 3 encoder layers
 TRANS_BASE_LR_DECAY_FACTOR = 0.5   # each lower layer × 0.5
 TRANS_BASE_RESUME_EPOCHS   = 20    # extra epochs when resuming from saved checkpoint
 
