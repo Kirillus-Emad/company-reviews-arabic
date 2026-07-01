@@ -89,9 +89,9 @@ TRANSFORMER_MODEL_NAME      = 'xlm-roberta-large'
 TRANSFORMER_MODELS_DIR      = '../Trained models/transformer large'
 TRANSFORMER_RESULTS_PATH    = '../Trained models/transformer large/results.json'
 
-TRANS_MAX_LEN               = 50
+TRANS_MAX_LEN               = 40
 TRANS_BATCH_SIZE            = 128
-TRANS_EPOCHS                = 1
+TRANS_EPOCHS                = 20
 TRANS_LR                    = 1e-4   # classifier head LR
 TRANS_WARMUP_EPOCHS         = 2      # epoch 1 = full LR warmup, then cosine decay
 TRANS_VAL_SPLIT             = 0.2
@@ -99,11 +99,11 @@ TRANS_EARLY_STOPPING_PATIENCE = 3
 TRANS_PREP_N_JOBS           = int(os.environ.get('TRANS_PREP_N_JOBS', max(os.cpu_count(), 1)))
 
 # ── Transformer Base (LLRD fine-tuning, no LoRA) ─────────────────────────────
-TRANS_BASE_MODEL_NAME      = 'xlm-roberta-base'
-TRANS_BASE_MODELS_DIR      = '../Trained models/transformer base'
-TRANS_BASE_RESULTS_PATH    = '../Trained models/transformer base/results.json'
+TRANS_BASE_MODEL_NAME      = 'cardiffnlp/twitter-xlm-roberta-base'
+TRANS_BASE_MODELS_DIR      = '../Trained models/transformer twitter base'
+TRANS_BASE_RESULTS_PATH    = '../Trained models/transformer twitter base/results.json'
 TRANS_BASE_BATCH_SIZE      = 256
-TRANS_BASE_FREEZE_LAYERS   = 0     # freeze embeddings + bottom 3 encoder layers
+TRANS_BASE_FREEZE_LAYERS   = 6     # freeze embeddings + bottom 3 encoder layers
 TRANS_BASE_LR_DECAY_FACTOR = 0.5   # each lower layer × 0.5
 TRANS_BASE_RESUME_EPOCHS   = 20    # extra epochs when resuming from saved checkpoint
 
@@ -115,7 +115,7 @@ LORA_TARGET_MODULES  = ['query', 'value']   # Q and V attention projections
 
 # ── LSTM / GRU ────────────────────────────────────────────────────────────────
 LSTM_MAX_SEQ_LEN             = 40
-LSTM_EMBED_DIM               = 512 #300   # matches fastText dim
+LSTM_EMBED_DIM               = 300         # matches fastText dim
 LSTM_HIDDEN_DIM              = 128
 LSTM_NUM_LAYERS              = 1
 LSTM_DROPOUT                 = 0.5

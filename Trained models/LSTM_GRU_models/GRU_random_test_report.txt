@@ -1,0 +1,13 @@
+
+====================================================
+GRU_random — TEST Classification Report
+====================================================
+              precision    recall  f1-score   support
+
+    negative       0.37      0.99      0.54      3395
+     neutral       0.00      0.00      0.00       472
+    positive       0.30      0.00      0.00      5225
+
+    accuracy                           0.37      9092
+   macro avg       0.22      0.33      0.18      9092
+weighted avg       0.31      0.37      0.20      9092
