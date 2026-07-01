@@ -3,11 +3,11 @@ camel-tools==1.6.0
 pyspellchecker==0.8.3
 contractions==0.1.73
 emoji==2.14.1
-nlpaug
+nlpaug==1.1.11
 
 # ── General NLP ─────────────────────────────────────────────────────────────
 nltk==3.9.1
-gensim==4.4.0          # word2vec embeddings used by nlpaug augmenter
+gensim==4.3.3          # word2vec embeddings used by nlpaug augmenter; 4.3.3 is the latest stable numpy-2.x-compatible release
 
 # ── Machine Learning ────────────────────────────────────────────────────────
 scikit-learn==1.8.0
@@ -33,7 +33,7 @@ transformers==4.57.6
 accelerate>=0.26.0         # required by HuggingFace Trainer
 peft>=0.10.0               # LoRA adapters for XLM-RoBERTa Large
 torchao>=0.16.0            # peft requires >0.16.0; Colab ships 0.10.0 which conflicts
-tokenizers==0.22.2
+tokenizers>=0.21
 huggingface-hub==0.34.4
 safetensors>=0.5.3
 
