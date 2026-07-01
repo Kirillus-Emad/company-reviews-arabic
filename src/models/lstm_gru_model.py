@@ -49,7 +49,10 @@ class RNNSentiment(nn.Module):
 
         self.head = nn.Sequential(
             nn.Dropout(dropout),
-            nn.Linear(rnn_out_dim, num_classes),
+            nn.Linear(rnn_out_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_dim, num_classes),
         )
 
     def _run_cells(self, cells, emb):
