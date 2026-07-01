@@ -7,15 +7,14 @@ nlpaug==1.1.11
 
 # ── General NLP ─────────────────────────────────────────────────────────────
 nltk==3.9.1
-# gensim: install separately with --no-deps (metadata says numpy<2 but code works fine on numpy 2.x)
-# !pip install gensim==4.3.3 --no-deps --quiet
+gensim==4.3.3 
 
 # ── Machine Learning ────────────────────────────────────────────────────────
 scikit-learn==1.8.0
 xgboost==3.1.1
 
 # ── Data & Math ─────────────────────────────────────────────────────────────
-numpy>=2.0              # camel-tools requires >=2.0; do not pin exact version
+numpy==2.1.3            # camel-tools requires >=2.0; do not pin exact version
 pandas==2.2.3
 scipy==1.15.2
 
