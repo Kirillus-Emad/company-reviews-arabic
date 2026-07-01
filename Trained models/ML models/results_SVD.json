@@ -1,0 +1,34 @@
+{
+  "LogisticRegression": {
+    "train": {
+      "accuracy": 0.8033,
+      "precision": 0.8278,
+      "recall": 0.8033,
+      "f1": 0.81
+    },
+    "test": {
+      "accuracy": 0.7644,
+      "precision": 0.8382,
+      "recall": 0.7644,
+      "f1": 0.7952
+    },
+    "train_time_sec": 117.09,
+    "test_time_sec": 0.02
+  },
+  "XGBoost": {
+    "train": {
+      "accuracy": 0.962,
+      "precision": 0.9631,
+      "recall": 0.962,
+      "f1": 0.9619
+    },
+    "test": {
+      "accuracy": 0.8121,
+      "precision": 0.7941,
+      "recall": 0.8121,
+      "f1": 0.8005
+    },
+    "train_time_sec": 1547.86,
+    "test_time_sec": 0.16
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "LogisticRegression": {
+    "train": {
+      "accuracy": 0.8657,
+      "precision": 0.8823,
+      "recall": 0.8657,
+      "f1": 0.8706
+    },
+    "test": {
+      "accuracy": 0.8244,
+      "precision": 0.8655,
+      "recall": 0.8244,
+      "f1": 0.8433
+    },
+    "train_time_sec": 22.18,
+    "test_time_sec": 0.0
+  },
+  "MultinomialNB": {
+    "train": {
+      "accuracy": 0.8672,
+      "precision": 0.8675,
+      "recall": 0.8672,
+      "f1": 0.866
+    },
+    "test": {
+      "accuracy": 0.8476,
+      "precision": 0.8441,
+      "recall": 0.8476,
+      "f1": 0.8455
+    },
+    "train_time_sec": 0.0,
+    "test_time_sec": 0.0
+  },
+  "ComplementNB": {
+    "train": {
+      "accuracy": 0.7721,
+      "precision": 0.8684,
+      "recall": 0.7721,
+      "f1": 0.8059
+    },
+    "test": {
+      "accuracy": 0.7433,
+      "precision": 0.8696,
+      "recall": 0.7433,
+      "f1": 0.7978
+    },
+    "train_time_sec": 0.0,
+    "test_time_sec": 0.0
+  },
+  "XGBoost": {
+    "train": {
+      "accuracy": 0.895,
+      "precision": 0.9005,
+      "recall": 0.895,
+      "f1": 0.8925
+    },
+    "test": {
+      "accuracy": 0.8433,
+      "precision": 0.8378,
+      "recall": 0.8433,
+      "f1": 0.8377
+    },
+    "train_time_sec": 65.4,
+    "test_time_sec": 0.07
+  }
+}

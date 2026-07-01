@@ -1,0 +1,13 @@
+
+====================================================
+LSTM_fasttext — VALIDATION Classification Report
+====================================================
+              precision    recall  f1-score   support
+
+    negative       0.82      0.78      0.80      2163
+     neutral       0.11      0.10      0.10       235
+    positive       0.81      0.85      0.83      3025
+
+    accuracy                           0.79      5423
+   macro avg       0.58      0.58      0.58      5423
+weighted avg       0.79      0.79      0.79      5423

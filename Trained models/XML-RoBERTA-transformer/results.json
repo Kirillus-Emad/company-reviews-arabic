@@ -1,18 +1,18 @@
 {
   "model": "xlm-roberta-base",
   "freeze_layers": 0,
-  "val": {
-    "accuracy": 0.6433,
-    "precision": 0.6213,
-    "recall": 0.6433,
-    "f1": 0.6244
+  "train": {
+    "accuracy": 0.8643,
+    "precision": 0.8823,
+    "recall": 0.8682,
+    "f1": 0.8726
   },
   "test": {
-    "accuracy": 0.6951,
-    "precision": 0.6927,
-    "recall": 0.6951,
-    "f1": 0.6915
+    "accuracy": 0.8518,
+    "precision": 0.8905,
+    "recall": 0.8518,
+    "f1": 0.8692
   },
-  "train_time_sec": 361.01,
+  "train_time_sec": 6422.9,
   "test_time_sec": 37.83
 }

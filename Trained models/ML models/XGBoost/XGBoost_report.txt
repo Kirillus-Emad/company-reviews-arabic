@@ -1,0 +1,27 @@
+
+==================================================
+XGBoost — TRAIN Classification Report
+==================================================
+              precision    recall  f1-score   support
+
+    negative       0.94      0.84      0.88     10815
+     neutral       1.00      0.56      0.72      1176
+    positive       0.87      0.96      0.91     15121
+
+    accuracy                           0.89     27112
+   macro avg       0.93      0.79      0.84     27112
+weighted avg       0.90      0.89      0.89     27112
+
+
+==================================================
+XGBoost — TEST Classification Report
+==================================================
+              precision    recall  f1-score   support
+
+    negative       0.87      0.76      0.81      3705
+     neutral       0.07      0.01      0.02       100
+    positive       0.83      0.92      0.87      5317
+
+    accuracy                           0.84      9122
+   macro avg       0.59      0.56      0.57      9122
+weighted avg       0.84      0.84      0.84      9122

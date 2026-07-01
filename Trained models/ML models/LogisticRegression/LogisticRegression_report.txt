@@ -1,0 +1,27 @@
+
+==================================================
+LogisticRegression — TRAIN Classification Report
+==================================================
+              precision    recall  f1-score   support
+
+    negative       0.87      0.88      0.87     10815
+     neutral       0.48      0.90      0.63      1176
+    positive       0.92      0.86      0.89     15121
+
+    accuracy                           0.87     27112
+   macro avg       0.76      0.88      0.80     27112
+weighted avg       0.88      0.87      0.87     27112
+
+
+==================================================
+LogisticRegression — TEST Classification Report
+==================================================
+              precision    recall  f1-score   support
+
+    negative       0.84      0.83      0.83      3705
+     neutral       0.05      0.29      0.09       100
+    positive       0.90      0.83      0.87      5317
+
+    accuracy                           0.82      9122
+   macro avg       0.60      0.65      0.60      9122
+weighted avg       0.87      0.82      0.84      9122
